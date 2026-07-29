@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
 import {
   LayoutDashboard,
   ArrowLeftRight,
@@ -36,6 +36,7 @@ export function AppLayout() {
 
   return (
     <div className="app-layout">
+      <a href="#main-content" className="skip-link">Saltar al contenido principal</a>
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />
@@ -58,14 +59,15 @@ export function AppLayout() {
             const isActive = location.pathname.startsWith(item.path);
             const Icon = item.icon;
             return (
-              <button
+              <Link
                 key={item.path}
+                to={item.path}
                 className={`sidebar__link ${isActive ? 'sidebar__link--active' : ''}`}
-                onClick={() => { navigate(item.path); setSidebarOpen(false); }}
+                onClick={() => setSidebarOpen(false)}
               >
                 <Icon size={20} />
                 <span>{item.label}</span>
-              </button>
+              </Link>
             );
           })}
         </nav>
@@ -100,7 +102,7 @@ export function AppLayout() {
         </header>
 
         {/* Page content */}
-        <main className="main-content">
+        <main className="main-content" id="main-content" tabIndex={-1}>
           <Outlet />
         </main>
       </div>
@@ -111,14 +113,14 @@ export function AppLayout() {
           const isActive = location.pathname.startsWith(item.path);
           const Icon = item.icon;
           return (
-            <button
+            <Link
               key={item.path}
+              to={item.path}
               className={`bottom-nav__item ${isActive ? 'bottom-nav__item--active' : ''}`}
-              onClick={() => navigate(item.path)}
             >
               <Icon size={20} />
               <span className="bottom-nav__label">{item.label}</span>
-            </button>
+            </Link>
           );
         })}
       </nav>

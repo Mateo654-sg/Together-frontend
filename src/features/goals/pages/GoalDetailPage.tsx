@@ -92,7 +92,7 @@ export default function GoalDetailPage() {
           <ProgressBar progress={goal.progress_percentage ?? 0} />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+        <div className="info-grid">
           <div>
             <div className="stat-card__label">Ahorrado</div>
             <MoneyDisplay amount={goal.current_amount} size="lg" color="primary" />

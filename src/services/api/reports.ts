@@ -1,5 +1,5 @@
 import apiClient from '@/config/api';
-import type { Report, GenerateReportInput, PaginatedList, PaginationParams } from '@/types/api';
+import type { Report, GenerateReportInput, PaginatedList, PaginationParams, MonthlyStatistics, YearlyStatistics, PersonalStatistics } from '@/types/api';
 
 export const reportsApi = {
   async getAll(params?: PaginationParams): Promise<PaginatedList<Report>> {
@@ -17,16 +17,16 @@ export const reportsApi = {
   async remove(id: string): Promise<void> {
     await apiClient.delete(`/reports/${id}`);
   },
-  async getMonthlyStats(month: number, year: number): Promise<Record<string, unknown>> {
-    const response = await apiClient.get('/reports/statistics/monthly', { params: { month, year } });
+  async getMonthlyStats(month: number, year: number): Promise<MonthlyStatistics> {
+    const response = await apiClient.get<MonthlyStatistics>('/reports/statistics/monthly', { params: { month, year } });
     return response.data;
   },
-  async getYearlyStats(year: number): Promise<Record<string, unknown>> {
-    const response = await apiClient.get('/reports/statistics/yearly', { params: { year } });
+  async getYearlyStats(year: number): Promise<YearlyStatistics> {
+    const response = await apiClient.get<YearlyStatistics>('/reports/statistics/yearly', { params: { year } });
     return response.data;
   },
-  async getPersonalStats(): Promise<Record<string, unknown>> {
-    const response = await apiClient.get('/reports/statistics/personal');
+  async getPersonalStats(): Promise<PersonalStatistics> {
+    const response = await apiClient.get<PersonalStatistics>('/reports/statistics/personal');
     return response.data;
   },
 };

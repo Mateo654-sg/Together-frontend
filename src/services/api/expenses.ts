@@ -1,6 +1,12 @@
 import apiClient from '@/config/api';
 import type { Expense, CreateExpenseInput, PaginatedList, PaginationParams } from '@/types/api';
 
+export interface BalanceResponse {
+  balance: number;
+  income: number;
+  expense: number;
+}
+
 export const expensesApi = {
   async getAll(params?: PaginationParams): Promise<PaginatedList<Expense>> {
     const response = await apiClient.get<PaginatedList<Expense>>('/expenses', { params });
@@ -21,8 +27,8 @@ export const expensesApi = {
   async remove(id: string): Promise<void> {
     await apiClient.delete(`/expenses/${id}`);
   },
-  async getBalance(): Promise<Record<string, unknown>> {
-    const response = await apiClient.get('/expenses/balance');
+  async getBalance(): Promise<BalanceResponse> {
+    const response = await apiClient.get<BalanceResponse>('/expenses/balance');
     return response.data;
   },
 };

@@ -60,7 +60,7 @@ export default function ExpenseDetailPage() {
           <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--color-text-primary)' }}>{expense.description}</h2>
           <MoneyDisplay amount={expense.amount} size="xl" color="negative" />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+        <div className="info-grid">
           <div>
             <div className="stat-card__label">Fecha</div>
             <div style={{ color: 'var(--color-text-primary)', fontSize: 'var(--text-sm)', marginTop: 4 }}>

@@ -23,6 +23,7 @@ export default function RegisterPage() {
     if (!lastName.trim()) { setLocalError('Ingresa tu apellido'); return; }
     if (!email.trim()) { setLocalError('Ingresa tu correo electrónico'); return; }
     if (!password) { setLocalError('Ingresa tu contraseña'); return; }
+    if (password.length < 12) { setLocalError('La contraseña debe tener al menos 12 caracteres'); return; }
 
     try {
       await register({

@@ -7,6 +7,7 @@ import { PageLoader } from '@/shared/components/PageLoader';
 const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage'));
 const RegisterPage = lazy(() => import('@/features/auth/pages/RegisterPage'));
 const ForgotPasswordPage = lazy(() => import('@/features/auth/pages/ForgotPasswordPage'));
+const ResetPasswordPage = lazy(() => import('@/features/auth/pages/ResetPasswordPage'));
 const DashboardPage = lazy(() => import('@/features/dashboard/pages/DashboardPage'));
 const ExpensesPage = lazy(() => import('@/features/expenses/pages/ExpensesPage'));
 const ExpenseDetailPage = lazy(() => import('@/features/expenses/pages/ExpenseDetailPage'));
@@ -47,6 +48,7 @@ export function Router() {
         <Route path="/login" element={<SuspenseWrapper><LoginPage /></SuspenseWrapper>} />
         <Route path="/register" element={<SuspenseWrapper><RegisterPage /></SuspenseWrapper>} />
         <Route path="/forgot-password" element={<SuspenseWrapper><ForgotPasswordPage /></SuspenseWrapper>} />
+        <Route path="/reset-password" element={<SuspenseWrapper><ResetPasswordPage /></SuspenseWrapper>} />
       </Route>
       <Route element={<RequireAuth />}>
         <Route element={<AppLayout />}>

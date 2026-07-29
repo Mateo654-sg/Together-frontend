@@ -101,10 +101,15 @@ export interface DashboardUpcomingPayment {
   id: string; type: string; description: string; amount: number;
   due_date: string; status: string;
 }
+export interface DashboardStatistics {
+  monthly_breakdown: Array<{ month: string; income: number; expense: number }>;
+  top_categories: Array<{ category_name: string; total_amount: number; percentage_of_total?: number }>;
+}
+
 export interface Dashboard {
   balance: number; income: number; expense: number; saving: number;
   cash_flow: number; goals: DashboardGoalSummary[];
-  statistics: Record<string, unknown>;
+  statistics: DashboardStatistics;
   recent_activity: DashboardRecentActivity[];
   upcoming_payments: DashboardUpcomingPayment[];
   ai_recommendations: string[];
@@ -122,10 +127,14 @@ export interface MonthlyStatistics {
   balance: number; savings_rate: number;
   top_categories: CategoryStatistics[]; daily_average_expense: number;
 }
+export interface MonthlyBreakdownItem {
+  month: number; income: number; expense: number; balance: number;
+}
+
 export interface YearlyStatistics {
   year: number; total_income: number; total_expense: number;
   balance: number; savings_rate: number;
-  monthly_breakdown: Record<string, unknown>[]; top_categories: CategoryStatistics[];
+  monthly_breakdown: MonthlyBreakdownItem[]; top_categories: CategoryStatistics[];
 }
 export interface CategoryStatistics {
   category_id: string; category_name: string; total_amount: number;
@@ -134,7 +143,7 @@ export interface CategoryStatistics {
 export interface PersonalStatistics {
   total_income: number; total_expenses: number; balance: number;
   savings_rate: number; top_categories: CategoryStatistics[];
-  monthly_trend: Record<string, unknown>[];
+  monthly_trend: MonthlyBreakdownItem[];
 }
 
 // ─── Couples ────────────────────────────────────────────────

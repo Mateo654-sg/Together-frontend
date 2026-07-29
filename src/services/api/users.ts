@@ -1,6 +1,13 @@
 import apiClient from '@/config/api';
 import type { User, UserSettings } from '@/types/api';
 
+export interface UserStatistics {
+  total_expenses: number;
+  total_incomes: number;
+  current_balance: number;
+  active_goals: number;
+}
+
 export const usersApi = {
   async getMe(): Promise<User> {
     const response = await apiClient.get<User>('/users/me');
@@ -16,8 +23,8 @@ export const usersApi = {
   async changePassword(data: { current_password: string; new_password: string }): Promise<void> {
     await apiClient.post('/users/change-password', data);
   },
-  async getStatistics(): Promise<Record<string, unknown>> {
-    const response = await apiClient.get('/users/statistics');
+  async getStatistics(): Promise<UserStatistics> {
+    const response = await apiClient.get<UserStatistics>('/users/statistics');
     return response.data;
   },
   async getSettings(): Promise<UserSettings> {

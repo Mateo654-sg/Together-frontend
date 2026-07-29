@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Send, Heart, ArrowLeft } from 'lucide-react';
+import { authApi } from '@/services/api';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [localError, setLocalError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -13,7 +15,16 @@ export default function ForgotPasswordPage() {
 
     if (!email.trim()) { setLocalError('Ingresa tu correo electrónico'); return; }
 
-    setSubmitted(true);
+    setLoading(true);
+    try {
+      await authApi.forgotPassword(email.trim());
+      setSubmitted(true);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Error al enviar el correo';
+      setLocalError(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (submitted) {
@@ -67,8 +78,8 @@ export default function ForgotPasswordPage() {
             />
           </div>
 
-          <button type="submit" className="btn btn--primary btn--full">
-            <Send size={18} /> Enviar enlace
+          <button type="submit" className="btn btn--primary btn--full" disabled={loading}>
+            {loading ? <span className="btn__loader" /> : <><Send size={18} /> Enviar enlace</>}
           </button>
         </form>
 

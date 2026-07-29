@@ -9,10 +9,9 @@ import axios, {
   AxiosResponse,
 } from 'axios';
 import type { ApiResponse } from '@/types/api';
+import { tokenStore } from './token-store';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api/v1';
-
-const ACCESS_TOKEN_KEY = 'together_access_token';
 
 let isRefreshing = false;
 let failedQueue: Array<{
@@ -31,16 +30,22 @@ const processQueue = (error: unknown, token: string | null) => {
   failedQueue = [];
 };
 
-// ── Token Storage (solo access_token en localStorage) ──────
+let _onLogout: (() => void) | null = null;
+
+export const setLogoutCallback = (cb: () => void) => {
+  _onLogout = cb;
+};
+
+// ── Token Storage (en memoria, no localStorage) ───────────
 export const tokenStorage = {
   getAccessToken(): string | null {
-    try { return localStorage.getItem(ACCESS_TOKEN_KEY); } catch { return null; }
+    return tokenStore.get();
   },
   setAccessToken(token: string): void {
-    try { localStorage.setItem(ACCESS_TOKEN_KEY, token); } catch (e) { console.error('Failed to store access token:', e); }
+    tokenStore.set(token);
   },
   clearTokens(): void {
-    try { localStorage.removeItem(ACCESS_TOKEN_KEY); } catch (e) { console.error('Failed to clear tokens:', e); }
+    tokenStore.clear();
   },
 };
 
@@ -136,7 +141,7 @@ apiClient.interceptors.response.use(
     } catch (refreshError) {
       processQueue(refreshError, null);
       tokenStorage.clearTokens();
-      window.location.href = '/login';
+      _onLogout?.();
       return Promise.reject(refreshError);
     } finally {
       isRefreshing = false;

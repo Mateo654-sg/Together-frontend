@@ -42,8 +42,8 @@ export default function DashboardPage() {
 
   if (!data) return <EmptyState title="No hay datos del dashboard" />;
 
-  const activityData = data.statistics?.monthly_breakdown as Array<{ month: string; income: number; expense: number }> | undefined;
-  const categoryStats = data.statistics?.top_categories as Array<{ category_name: string; total_amount: number }> | undefined;
+  const activityData = data.statistics?.monthly_breakdown;
+  const categoryStats = data.statistics?.top_categories;
 
   const greet = () => {
     const hour = new Date().getHours();
@@ -112,7 +112,7 @@ export default function DashboardPage() {
         </Card>
       </CardGrid>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)', marginTop: 'var(--space-6)' }}>
+      <div className="info-grid" style={{ marginTop: 'var(--space-6)' }}>
         <div className="chart-card">
           <div className="chart-title">Ingresos vs Gastos</div>
           <div className="chart-container">
@@ -180,7 +180,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)', marginTop: 'var(--space-6)' }}>
+      <div className="info-grid" style={{ marginTop: 'var(--space-6)' }}>
         <div className="dashboard-section">
           <div className="section-header">
             <h2 className="section-title">Actividad Reciente</h2>

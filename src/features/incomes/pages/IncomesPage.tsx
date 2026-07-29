@@ -1,6 +1,5 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Plus, Search } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Plus, Search, ChevronDown } from 'lucide-react';
 import { incomesApi } from '@/services/api';
 import { Card } from '@/shared/components/Card';
 import { MoneyDisplay } from '@/shared/components/MoneyDisplay';
@@ -8,22 +7,20 @@ import { EmptyState } from '@/shared/components/EmptyState';
 import { ErrorState } from '@/shared/components/ErrorState';
 import { SkeletonCard } from '@/shared/components/Skeleton';
 import { formatDate } from '@/shared/utils/format';
-import { useNavigate } from 'react-router-dom';
+import { usePaginatedQuery } from '@/shared/hooks/usePaginatedQuery';
 
 import type { Income } from '@/types/api';
 
 export default function IncomesPage() {
   const navigate = useNavigate();
-  const [search, setSearch] = useState('');
-  const { data, isLoading, isError, refetch } = useQuery({
+  const {
+    items: filtered, isLoading, isError, isFetchingNextPage, hasNextPage,
+    fetchNextPage, refetch, search, setSearch, total,
+  } = usePaginatedQuery<Income>({
     queryKey: ['incomes'],
-    queryFn: () => incomesApi.getAll(),
+    queryFn: (params) => incomesApi.getAll(params),
+    filterFn: (item, q) => item.description.toLowerCase().includes(q),
   });
-
-  const incomes: Income[] = data?.data ?? [];
-  const filtered: Income[] = search
-    ? incomes.filter((e) => e.description.toLowerCase().includes(search.toLowerCase()))
-    : incomes;
 
   if (isLoading) return (
     <div>
@@ -37,7 +34,9 @@ export default function IncomesPage() {
   return (
     <div>
       <div className="dashboard-header">
-        <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--color-text-primary)' }}>Ingresos</h1>
+        <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--color-text-primary)' }}>
+          Ingresos {total > 0 && <span style={{ fontSize: 'var(--text-sm)', fontWeight: 400, color: 'var(--color-text-muted)' }}>({total})</span>}
+        </h1>
         <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
           <div className="topbar__search" style={{ position: 'relative', width: 200 }}>
             <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)' }} />
@@ -64,11 +63,11 @@ export default function IncomesPage() {
       ) : (
         <Card hover={false}>
           {filtered.map((income) => (
-            <div
+            <Link
               key={income.id}
+              to={`/incomes/${income.id}`}
               className="activity-item"
-              style={{ cursor: 'pointer' }}
-              onClick={() => navigate(`/incomes/${income.id}`)}
+              style={{ textDecoration: 'none' }}
             >
               <div className="activity-item__dot" style={{ background: 'var(--color-success)' }} />
               <div className="activity-item__info">
@@ -76,8 +75,19 @@ export default function IncomesPage() {
                 <div className="activity-item__date">{formatDate(income.income_date)}</div>
               </div>
               <MoneyDisplay amount={income.amount} size="sm" color="positive" />
-            </div>
+            </Link>
           ))}
+          {hasNextPage && (
+            <div style={{ textAlign: 'center', padding: 'var(--space-4)' }}>
+              <button
+                className="btn btn--ghost btn--sm"
+                onClick={() => fetchNextPage()}
+                disabled={isFetchingNextPage}
+              >
+                {isFetchingNextPage ? <span className="btn__loader" /> : <><ChevronDown size={16} /> Cargar más</>}
+              </button>
+            </div>
+          )}
         </Card>
       )}
     </div>

@@ -32,18 +32,15 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const tokens = await authApi.login(input);
       if (tokens?.access_token) {
-        try {
-          const user = await usersApi.getMe();
-          set({ user, isAuthenticated: true, isLoading: false });
-        } catch {
-          set({ isAuthenticated: true, isLoading: false });
-        }
+        const user = await usersApi.getMe();
+        set({ user, isAuthenticated: true, isLoading: false });
       } else {
         set({ isLoading: false, error: 'No se recibieron tokens' });
       }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Login failed';
-      set({ isLoading: false, error: message });
+      tokenStorage.clearTokens();
+      set({ user: null, isAuthenticated: false, isLoading: false, error: message });
       throw error;
     }
   },
@@ -53,18 +50,15 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const tokens = await authApi.googleLogin(idToken);
       if (tokens?.access_token) {
-        try {
-          const user = await usersApi.getMe();
-          set({ user, isAuthenticated: true, isLoading: false });
-        } catch {
-          set({ isAuthenticated: true, isLoading: false });
-        }
+        const user = await usersApi.getMe();
+        set({ user, isAuthenticated: true, isLoading: false });
       } else {
         set({ isLoading: false, error: 'No se recibieron tokens' });
       }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Google login failed';
-      set({ isLoading: false, error: message });
+      tokenStorage.clearTokens();
+      set({ user: null, isAuthenticated: false, isLoading: false, error: message });
       throw error;
     }
   },
@@ -74,18 +68,15 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const tokens = await authApi.register(input);
       if (tokens?.access_token) {
-        try {
-          const user = await usersApi.getMe();
-          set({ user, isAuthenticated: true, isLoading: false });
-        } catch {
-          set({ isAuthenticated: true, isLoading: false });
-        }
+        const user = await usersApi.getMe();
+        set({ user, isAuthenticated: true, isLoading: false });
       } else {
         set({ isLoading: false, error: 'No se recibieron tokens' });
       }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Registration failed';
-      set({ isLoading: false, error: message });
+      tokenStorage.clearTokens();
+      set({ user: null, isAuthenticated: false, isLoading: false, error: message });
       throw error;
     }
   },
@@ -126,12 +117,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
 
       await authApi.refresh();
-      try {
-        const user = await usersApi.getMe();
-        set({ user, isAuthenticated: true, isLoading: false });
-      } catch {
-        set({ isAuthenticated: true, isLoading: false });
-      }
+      const user = await usersApi.getMe();
+      set({ user, isAuthenticated: true, isLoading: false });
     } catch {
       tokenStorage.clearTokens();
       set({ user: null, isAuthenticated: false, isLoading: false });

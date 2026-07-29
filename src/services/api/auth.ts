@@ -1,5 +1,4 @@
-import apiClient from '@/config/api';
-import { tokenStorage } from '@/config/api';
+import apiClient, { tokenStorage } from '@/config/api';
 import type { LoginInput, RegisterInput, TokenResponse } from '@/types/api';
 
 export const authApi = {
@@ -53,5 +52,13 @@ export const authApi = {
     } finally {
       tokenStorage.clearTokens();
     }
+  },
+
+  async forgotPassword(email: string): Promise<void> {
+    await apiClient.post('/auth/forgot-password', { email });
+  },
+
+  async resetPassword(token: string, password: string): Promise<void> {
+    await apiClient.post('/auth/reset-password', { token, password });
   },
 };

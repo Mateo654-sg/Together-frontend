@@ -42,7 +42,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+        <div className="info-grid">
           <div className="stat-card" style={{ gap: 'var(--space-3)' }}>
             <Mail size={16} color="var(--color-text-muted)" />
             <div>
