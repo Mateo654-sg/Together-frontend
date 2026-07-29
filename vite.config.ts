@@ -1,11 +1,8 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
-import { fileURLToPath } from 'url';
-import path from 'path';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const srcDir = new URL('./src', import.meta.url).pathname;
 
 export default defineConfig({
   plugins: [
@@ -49,12 +46,12 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@features': path.resolve(__dirname, './src/features'),
-      '@shared': path.resolve(__dirname, './src/shared'),
-      '@styles': path.resolve(__dirname, './src/styles'),
-      '@config': path.resolve(__dirname, './src/config'),
-      '@types': path.resolve(__dirname, './src/types'),
+      '@': srcDir,
+      '@features': `${srcDir}/features`,
+      '@shared': `${srcDir}/shared`,
+      '@styles': `${srcDir}/styles`,
+      '@config': `${srcDir}/config`,
+      '@types': `${srcDir}/types`,
     },
   },
   server: {
