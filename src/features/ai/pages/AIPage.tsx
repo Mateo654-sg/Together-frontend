@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Sparkles, Send, Bot, TrendingUp, AlertTriangle, Lightbulb } from 'lucide-react';
 import { Card } from '@/shared/components/Card';
-import { MoneyDisplay } from '@/shared/components/MoneyDisplay';
+import { aiApi } from '@/services/api';
 
 const suggestions = [
-  { icon: TrendingUp, label: 'Análisis de gastos', color: 'var(--color-danger)' },
-  { icon: Lightbulb, label: 'Recomendaciones', color: 'var(--color-warning)' },
-  { icon: AlertTriangle, label: 'Alertas financieras', color: 'var(--color-warning)' },
+  { icon: TrendingUp, label: 'Análisis de gastos', prompt: 'Analiza mis gastos de este mes y dame un resumen' },
+  { icon: Lightbulb, label: 'Recomendaciones', prompt: 'Dame recomendaciones para ahorrar dinero' },
+  { icon: AlertTriangle, label: 'Alertas financieras', prompt: '¿Hay alguna alerta financiera que deba conocer?' },
 ];
 
 export default function AIPage() {
@@ -14,17 +14,20 @@ export default function AIPage() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSend = async () => {
-    if (!input.trim()) return;
-    const userMsg = input.trim();
+  const handleSend = async (overrideText?: string) => {
+    const userMsg = overrideText || input.trim();
+    if (!userMsg) return;
     setInput('');
     setMessages((prev) => [...prev, { role: 'user', content: userMsg }]);
     setLoading(true);
-    // Mock AI response
-    setTimeout(() => {
-      setMessages((prev) => [...prev, { role: 'ai', content: `He analizado tu consulta sobre "${userMsg}". Esta funcionalidad estará disponible próximamente cuando conectes el endpoint de IA.` }]);
+    try {
+      const response = await aiApi.chat(userMsg);
+      setMessages((prev) => [...prev, { role: 'ai', content: response.answer }]);
+    } catch (err) {
+      setMessages((prev) => [...prev, { role: 'ai', content: 'Lo siento, ocurrió un error al procesar tu consulta. Intenta de nuevo.' }]);
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -53,9 +56,9 @@ export default function AIPage() {
             <button
               key={s.label}
               className="btn btn--secondary btn--sm"
-              onClick={() => { setInput(s.label); }}
+              onClick={() => handleSend(s.prompt)}
             >
-              <s.icon size={14} color={s.color} /> {s.label}
+              <s.icon size={14} /> {s.label}
             </button>
           ))}
         </div>
@@ -109,7 +112,7 @@ export default function AIPage() {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
           />
-          <button className="btn btn--primary" onClick={handleSend} disabled={!input.trim() || loading}>
+          <button className="btn btn--primary" onClick={() => handleSend()} disabled={!input.trim() || loading}>
             <Send size={16} />
           </button>
         </div>

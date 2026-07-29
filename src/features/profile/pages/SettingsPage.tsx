@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/features/auth/store/auth-store';
 import { Card } from '@/shared/components/Card';
+import { ErrorState } from '@/shared/components/ErrorState';
 import { ArrowLeft, Save } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { usersApi } from '@/services/api';
 
 const currencies = ['COP', 'USD', 'EUR', 'MXN', 'ARS', 'CLP', 'PEN', 'BRL'];
 const languages = ['es', 'en'];
@@ -10,17 +12,48 @@ const languages = ['es', 'en'];
 export default function SettingsPage() {
   const { user, setUser } = useAuthStore();
   const navigate = useNavigate();
-  const [currency, setCurrency] = useState(user?.currency || 'COP');
-  const [language, setLanguage] = useState(user?.language || 'es');
+  const [currency, setCurrency] = useState('COP');
+  const [language, setLanguage] = useState('es');
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [theme, setTheme] = useState('light');
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    usersApi.getSettings()
+      .then((settings) => {
+        setCurrency(settings.currency || user?.currency || 'COP');
+        setLanguage(settings.language || user?.language || 'es');
+        setNotificationsEnabled(settings.notifications_enabled ?? true);
+        setTheme(settings.theme || 'light');
+      })
+      .catch(() => {
+        setCurrency(user?.currency || 'COP');
+        setLanguage(user?.language || 'es');
+      })
+      .finally(() => setLoading(false));
+  }, [user]);
 
   const handleSave = async () => {
     setSaving(true);
-    // Mock save
-    await new Promise((r) => setTimeout(r, 800));
-    if (user) setUser({ ...user, currency, language });
-    setSaving(false);
+    setError(false);
+    try {
+      await usersApi.updateSettings({ currency, language, notifications_enabled: notificationsEnabled, theme });
+      if (user) setUser({ ...user, currency, language });
+    } catch {
+      setError(true);
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading) return (
+    <div>
+      <div className="dashboard-header"><h1>Configuración</h1></div>
+      <Card hover={false}><div className="skeleton" style={{ height: 200 }} /></Card>
+    </div>
+  );
 
   return (
     <div>
@@ -32,6 +65,8 @@ export default function SettingsPage() {
           <Save size={14} /> {saving ? 'Guardando...' : 'Guardar'}
         </button>
       </div>
+
+      {error && <ErrorState message="Error al guardar configuración" />}
 
       <Card hover={false}>
         <div className="form-group">
@@ -62,6 +97,32 @@ export default function SettingsPage() {
               </button>
             ))}
           </div>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Tema</label>
+          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+            {['light', 'dark', 'system'].map((t) => (
+              <button
+                key={t}
+                className={`btn btn--sm ${theme === t ? 'btn--primary' : 'btn--secondary'}`}
+                onClick={() => setTheme(t)}
+              >
+                {t === 'light' ? 'Claro' : t === 'dark' ? 'Oscuro' : 'Sistema'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            <input
+              type="checkbox"
+              checked={notificationsEnabled}
+              onChange={(e) => setNotificationsEnabled(e.target.checked)}
+            />
+            Notificaciones activadas
+          </label>
         </div>
       </Card>
     </div>

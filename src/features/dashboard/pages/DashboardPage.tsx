@@ -16,11 +16,12 @@ import { EmptyState } from '@/shared/components/EmptyState';
 import { ErrorState } from '@/shared/components/ErrorState';
 import { useAuthStore } from '@/features/auth/store/auth-store';
 import { formatRelative, formatCurrency, getInitials } from '@/shared/utils/format';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const CHART_COLORS = ['#FF4D8D', '#10B981', '#3B82F6', '#F59E0B', '#8B5CF6'];
 
 export default function DashboardPage() {
+  const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['dashboard'],
@@ -222,7 +223,7 @@ export default function DashboardPage() {
           </div>
           <Card hover={false}>
             {data.goals.length === 0 ? (
-              <EmptyState icon={PiggyBank} title="Sin metas" message="Crea tu primera meta de ahorro" action={{ label: 'Crear meta', onClick: () => window.location.href = '/goals' }} />
+              <EmptyState icon={PiggyBank} title="Sin metas" message="Crea tu primera meta de ahorro" action={{ label: 'Crear meta', onClick: () => navigate('/goals') }} />
             ) : (
               data.goals.slice(0, 3).map((goal) => (
                 <div key={goal.id} style={{ marginBottom: 'var(--space-4)' }}>

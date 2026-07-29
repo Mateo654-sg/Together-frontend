@@ -1,5 +1,5 @@
 import apiClient from '@/config/api';
-import type { User } from '@/types/api';
+import type { User, UserSettings } from '@/types/api';
 
 export const usersApi = {
   async getMe(): Promise<User> {
@@ -14,10 +14,18 @@ export const usersApi = {
     await apiClient.delete('/users/me', { data: { password } });
   },
   async changePassword(data: { current_password: string; new_password: string }): Promise<void> {
-    await apiClient.put('/users/change-password', data);
+    await apiClient.post('/users/change-password', data);
   },
   async getStatistics(): Promise<Record<string, unknown>> {
     const response = await apiClient.get('/users/statistics');
+    return response.data;
+  },
+  async getSettings(): Promise<UserSettings> {
+    const response = await apiClient.get<UserSettings>('/users/settings');
+    return response.data;
+  },
+  async updateSettings(data: Partial<UserSettings>): Promise<UserSettings> {
+    const response = await apiClient.put<UserSettings>('/users/settings', data);
     return response.data;
   },
 };

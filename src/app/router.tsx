@@ -10,8 +10,13 @@ const ForgotPasswordPage = lazy(() => import('@/features/auth/pages/ForgotPasswo
 const DashboardPage = lazy(() => import('@/features/dashboard/pages/DashboardPage'));
 const ExpensesPage = lazy(() => import('@/features/expenses/pages/ExpensesPage'));
 const ExpenseDetailPage = lazy(() => import('@/features/expenses/pages/ExpenseDetailPage'));
+const ExpenseFormPage = lazy(() => import('@/features/expenses/pages/ExpenseFormPage'));
+const IncomesPage = lazy(() => import('@/features/incomes/pages/IncomesPage'));
+const IncomeDetailPage = lazy(() => import('@/features/incomes/pages/IncomeDetailPage'));
+const IncomeFormPage = lazy(() => import('@/features/incomes/pages/IncomeFormPage'));
 const GoalsPage = lazy(() => import('@/features/goals/pages/GoalsPage'));
 const GoalDetailPage = lazy(() => import('@/features/goals/pages/GoalDetailPage'));
+const GoalFormPage = lazy(() => import('@/features/goals/pages/GoalFormPage'));
 const ActivityPage = lazy(() => import('@/features/activity/pages/ActivityPage'));
 const AIPage = lazy(() => import('@/features/ai/pages/AIPage'));
 const ProfilePage = lazy(() => import('@/features/profile/pages/ProfilePage'));
@@ -48,8 +53,16 @@ export function Router() {
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<SuspenseWrapper><DashboardPage /></SuspenseWrapper>} />
           <Route path="/expenses" element={<SuspenseWrapper><ExpensesPage /></SuspenseWrapper>} />
+          <Route path="/expenses/new" element={<SuspenseWrapper><ExpenseFormPage /></SuspenseWrapper>} />
+          <Route path="/expenses/:id/edit" element={<SuspenseWrapper><ExpenseFormPage /></SuspenseWrapper>} />
           <Route path="/expenses/:id" element={<SuspenseWrapper><ExpenseDetailPage /></SuspenseWrapper>} />
+          <Route path="/incomes" element={<SuspenseWrapper><IncomesPage /></SuspenseWrapper>} />
+          <Route path="/incomes/new" element={<SuspenseWrapper><IncomeFormPage /></SuspenseWrapper>} />
+          <Route path="/incomes/:id/edit" element={<SuspenseWrapper><IncomeFormPage /></SuspenseWrapper>} />
+          <Route path="/incomes/:id" element={<SuspenseWrapper><IncomeDetailPage /></SuspenseWrapper>} />
           <Route path="/goals" element={<SuspenseWrapper><GoalsPage /></SuspenseWrapper>} />
+          <Route path="/goals/new" element={<SuspenseWrapper><GoalFormPage /></SuspenseWrapper>} />
+          <Route path="/goals/:id/edit" element={<SuspenseWrapper><GoalFormPage /></SuspenseWrapper>} />
           <Route path="/goals/:id" element={<SuspenseWrapper><GoalDetailPage /></SuspenseWrapper>} />
           <Route path="/activity" element={<SuspenseWrapper><ActivityPage /></SuspenseWrapper>} />
           <Route path="/ai" element={<SuspenseWrapper><AIPage /></SuspenseWrapper>} />

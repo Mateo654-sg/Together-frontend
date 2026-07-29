@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Trash2, Edit3 } from 'lucide-react';
 import { expensesApi } from '@/services/api';
 import { Card } from '@/shared/components/Card';
@@ -11,10 +11,20 @@ import { formatDate, formatRelative } from '@/shared/utils/format';
 export default function ExpenseDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
   const { data: expense, isLoading, isError, refetch } = useQuery({
     queryKey: ['expense', id],
     queryFn: () => expensesApi.getById(id!),
     enabled: !!id,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => expensesApi.remove(id!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      navigate('/expenses');
+    },
   });
 
   if (isLoading) return (
@@ -33,8 +43,16 @@ export default function ExpenseDetailPage() {
           <ArrowLeft size={16} /> Volver
         </button>
         <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-          <button className="btn btn--secondary btn--sm"><Edit3 size={14} /> Editar</button>
-          <button className="btn btn--danger btn--sm"><Trash2 size={14} /> Eliminar</button>
+          <button className="btn btn--secondary btn--sm" onClick={() => navigate(`/expenses/${id}/edit`)}>
+            <Edit3 size={14} /> Editar
+          </button>
+          <button
+            className="btn btn--danger btn--sm"
+            onClick={() => { if (window.confirm('¿Eliminar este gasto?')) deleteMutation.mutate(); }}
+            disabled={deleteMutation.isPending}
+          >
+            <Trash2 size={14} /> {deleteMutation.isPending ? 'Eliminando...' : 'Eliminar'}
+          </button>
         </div>
       </div>
       <Card hover={false}>
