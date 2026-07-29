@@ -16,7 +16,7 @@ import { SkeletonCard } from '@/shared/components/Skeleton';
 import { EmptyState } from '@/shared/components/EmptyState';
 import { ErrorState } from '@/shared/components/ErrorState';
 import { useAuthStore } from '@/features/auth/store/auth-store';
-import { formatRelative, formatCurrency } from '@/shared/utils/format';
+import { formatRelative, formatCurrency, toFiniteNumber } from '@/shared/utils/format';
 
 const CATEGORY_ICONS = ['🍔', '🚗', '🏠', '🛒', '💳'];
 
@@ -30,6 +30,7 @@ function greet() {
 function getMovementIcon(type: string, description: string) {
   if (type === 'income') return '💵';
   const text = description.toLowerCase();
+  if (text.includes('aporte a meta')) return '💰';
   if (text.includes('comida') || text.includes('restaurant') || text.includes('mcdonald')) return '🍔';
   if (text.includes('mercado') || text.includes('walmart') || text.includes('super')) return '🛒';
   if (text.includes('transporte') || text.includes('uber') || text.includes('taxi')) return '🚗';
@@ -88,50 +89,54 @@ export default function DashboardPage() {
   const previousMonth = activityData.length > 1 ? activityData[activityData.length - 2] : undefined;
   const previousBalance = previousMonth ? previousMonth.income - previousMonth.expense : undefined;
   const previousSaving = previousMonth ? Math.max(previousMonth.income - previousMonth.expense, 0) : undefined;
-  const savingsRate = data.income > 0 ? Math.round((data.saving / data.income) * 100) : 0;
+  const income = toFiniteNumber(data.income);
+  const expense = toFiniteNumber(data.expense);
+  const balance = toFiniteNumber(data.balance);
+  const saving = toFiniteNumber(data.saving);
+  const cashFlow = toFiniteNumber(data.cash_flow);
+  const savingsRate = income > 0 ? Math.round((saving / income) * 100) : 0;
   const topCategory = categoryStats[0];
-  const topCategoryPercentage = topCategory?.percentage_of_total ?? 0;
   const period = new Date().toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
 
   const kpis = [
     {
       title: 'Balance Neto',
-      amount: data.balance,
+      amount: balance,
       icon: Wallet,
       iconClass: 'stat-card__icon--savings',
-      color: data.balance >= 0 ? 'positive' as const : 'negative' as const,
-      variation: getVariation(data.balance, previousBalance),
+      color: balance >= 0 ? 'positive' as const : 'negative' as const,
+      variation: getVariation(balance, previousBalance),
     },
     {
       title: 'Ingresos',
-      amount: data.income,
+      amount: income,
       icon: TrendingUp,
       iconClass: 'stat-card__icon--income',
       color: 'positive' as const,
-      variation: getVariation(data.income, previousMonth?.income),
+      variation: getVariation(income, previousMonth?.income),
     },
     {
       title: 'Gastos',
-      amount: data.expense,
+      amount: expense,
       icon: TrendingDown,
       iconClass: 'stat-card__icon--expense',
       color: 'negative' as const,
-      variation: getVariation(data.expense, previousMonth?.expense),
+      variation: getVariation(expense, previousMonth?.expense),
     },
     {
       title: 'Ahorro',
-      amount: data.saving,
+      amount: saving,
       icon: PiggyBank,
       iconClass: 'stat-card__icon--budget',
       color: 'primary' as const,
-      variation: getVariation(data.saving, previousSaving),
+      variation: getVariation(saving, previousSaving),
     },
   ];
 
   const insights = [
     topCategory ? `Tu mayor gasto fue ${topCategory.category_name}.` : 'Registra movimientos para identificar tu mayor gasto.',
     data.income > 0 ? `Ahorraste el ${savingsRate}% de tus ingresos.` : 'Agrega ingresos para medir tu capacidad de ahorro.',
-    data.cash_flow >= 0 ? 'Vas mejor que el mes anterior.' : 'Tus gastos superaron el flujo del mes.',
+    cashFlow >= 0 ? 'Vas mejor que el mes anterior.' : 'Tus gastos superaron el flujo del mes.',
   ];
 
   return (
@@ -229,10 +234,10 @@ export default function DashboardPage() {
                   <div className="activity-item__emoji" aria-hidden="true">{getMovementIcon(item.type, item.description)}</div>
                   <div className="activity-item__info">
                     <div className="activity-item__title">{item.description}</div>
-                    <div className="activity-item__date">{formatRelative(item.date)}</div>
+                    <div className="activity-item__date">{item.category ? `${item.category} · ` : ''}{formatRelative(item.date)}</div>
                   </div>
                   <div className="activity-item__amount">
-                    <MoneyDisplay amount={item.amount} size="sm" color={item.type === 'expense' ? 'negative' : 'positive'} />
+                    <MoneyDisplay amount={item.type === 'expense' ? -toFiniteNumber(item.amount) : item.amount} size="sm" color={item.type === 'expense' ? 'negative' : 'positive'} />
                   </div>
                 </div>
               ))}
@@ -249,7 +254,7 @@ export default function DashboardPage() {
           ) : (
             <div className="category-list">
               {categoryStats.slice(0, 5).map((category, index) => {
-                const percentage = Math.round(category.percentage_of_total ?? (topCategory?.total_amount ? (category.total_amount / topCategory.total_amount) * 100 : 0));
+                const percentage = Math.round(toFiniteNumber(category.percentage_of_total));
                 return (
                   <div key={category.category_name} className="category-row">
                     <div className="category-row__top">

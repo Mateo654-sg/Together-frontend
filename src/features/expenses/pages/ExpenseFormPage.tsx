@@ -1,11 +1,29 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, CreditCard, Save } from 'lucide-react';
 import { expensesApi, categoriesApi } from '@/services/api';
 import { Card } from '@/shared/components/Card';
 import { SkeletonCard } from '@/shared/components/Skeleton';
 import { ErrorState } from '@/shared/components/ErrorState';
+
+const PAYMENT_METHODS = [
+  'Efectivo',
+  'Nequi',
+  'Nu',
+  'Bancolombia',
+  'Davivienda',
+  'BBVA',
+  'Banco de Bogotá',
+  'Caja Social',
+  'Banco AV Villas',
+  'Banco Popular',
+  'Colpatria',
+  'PSE',
+  'Tarjeta Débito',
+  'Tarjeta Crédito',
+  'Otro',
+] as const;
 
 export default function ExpenseFormPage() {
   const { id } = useParams();
@@ -39,7 +57,7 @@ export default function ExpenseFormPage() {
       setExpenseDate(existing.expense_date);
       setCategoryId(existing.category_id || '');
       setNotes(existing.notes || '');
-      setPaymentMethod(existing.payment_method || '');
+      setPaymentMethod(PAYMENT_METHODS.includes(existing.payment_method as typeof PAYMENT_METHODS[number]) ? existing.payment_method || '' : '');
       setLocation(existing.location || '');
     }
   }, [existing]);
@@ -52,7 +70,7 @@ export default function ExpenseFormPage() {
         expense_date: expenseDate,
         ...(categoryId && { category_id: categoryId }),
         ...(notes && { notes }),
-        ...(paymentMethod && { payment_method: paymentMethod }),
+          payment_method: paymentMethod,
         ...(location && { location }),
       };
       return editMode
@@ -83,7 +101,7 @@ export default function ExpenseFormPage() {
         <button
           className="btn btn--primary btn--sm"
           onClick={() => mutation.mutate()}
-          disabled={!amount || !description || mutation.isPending}
+          disabled={!amount || !description || !paymentMethod || mutation.isPending}
         >
           <Save size={14} /> {mutation.isPending ? 'Guardando...' : editMode ? 'Actualizar' : 'Crear'}
         </button>
@@ -115,7 +133,15 @@ export default function ExpenseFormPage() {
         </div>
         <div className="form-group">
           <label className="form-label">Método de pago</label>
-          <input className="form-input" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} placeholder="Ej: Efectivo, Tarjeta" />
+          <div className="select-with-icon">
+            <CreditCard size={16} />
+            <select className="form-input" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} required>
+              <option value="">Selecciona un método de pago</option>
+              {PAYMENT_METHODS.map((method) => (
+                <option key={method} value={method}>{method}</option>
+              ))}
+            </select>
+          </div>
         </div>
         <div className="form-group">
           <label className="form-label">Ubicación</label>

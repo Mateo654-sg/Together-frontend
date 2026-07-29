@@ -24,6 +24,7 @@ export default function GoalDetailPage() {
     mutationFn: () => goalsApi.remove(id!),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       navigate('/goals');
     },
   });

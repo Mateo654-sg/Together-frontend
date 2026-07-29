@@ -13,14 +13,19 @@ const CURRENCY_LOCALE: Record<string, string> = {
   PEN: 'es-PE',
 };
 
-export function formatCurrency(amount: number, currency = 'COP'): string {
+export function toFiniteNumber(value: number | string | null | undefined): number {
+  const numberValue = typeof value === 'number' ? value : Number(value ?? 0);
+  return Number.isFinite(numberValue) ? numberValue : 0;
+}
+
+export function formatCurrency(amount: number | string | null | undefined, currency = 'COP'): string {
   const locale = CURRENCY_LOCALE[currency] ?? 'es-CO';
   return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency,
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(amount);
+  }).format(toFiniteNumber(amount));
 }
 
 export function formatDate(dateStr: string | null, style: 'short' | 'medium' | 'long' = 'medium'): string {

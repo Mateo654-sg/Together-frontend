@@ -10,7 +10,7 @@ import { ProgressBar } from '@/shared/components/ProgressBar';
 import { EmptyState } from '@/shared/components/EmptyState';
 import { ErrorState } from '@/shared/components/ErrorState';
 import { SkeletonCard } from '@/shared/components/Skeleton';
-import { formatCurrency, formatDate } from '@/shared/utils/format';
+import { formatCurrency, formatDate, toFiniteNumber } from '@/shared/utils/format';
 import { useNavigate } from 'react-router-dom';
 
 import type { Goal } from '@/types/api';
@@ -20,12 +20,14 @@ type GoalFilter = 'active' | 'completed' | 'all';
 const GOAL_ICONS = ['✈️', '🏠', '🚗', '💻', '🎓', '💍', '🌴', '🎯'];
 
 function getProgress(goal: Goal) {
-  const progress = goal.progress_percentage ?? (goal.target_amount > 0 ? (goal.current_amount / goal.target_amount) * 100 : 0);
+  const currentAmount = toFiniteNumber(goal.current_amount);
+  const targetAmount = toFiniteNumber(goal.target_amount);
+  const progress = goal.progress_percentage ?? (targetAmount > 0 ? (currentAmount / targetAmount) * 100 : 0);
   return Math.min(Math.max(Math.round(progress), 0), 100);
 }
 
 function getRemaining(goal: Goal) {
-  return Math.max(goal.target_amount - goal.current_amount, 0);
+  return Math.max(toFiniteNumber(goal.target_amount) - toFiniteNumber(goal.current_amount), 0);
 }
 
 export default function GoalsPage() {
@@ -62,7 +64,7 @@ export default function GoalsPage() {
     return {
       active: active.length,
       completed: completed.length,
-      totalSaved: goals.reduce((acc, goal) => acc + goal.current_amount, 0),
+      totalSaved: goals.reduce((acc, goal) => acc + toFiniteNumber(goal.current_amount), 0),
       nextGoal,
     };
   }, [goals]);
@@ -80,7 +82,7 @@ export default function GoalsPage() {
   const contributeMutation = useMutation({
     mutationFn: () => goalsApi.contribute(selectedGoal!.id, parsedAmount, new Date().toISOString().split('T')[0]),
     onSuccess: async () => {
-      const completed = selectedGoal ? selectedGoal.current_amount + parsedAmount >= selectedGoal.target_amount : false;
+      const completed = selectedGoal ? toFiniteNumber(selectedGoal.current_amount) + parsedAmount >= toFiniteNumber(selectedGoal.target_amount) : false;
       setSuccessMessage(completed ? '¡Felicidades! Has completado tu meta de ahorro.' : 'Aporte registrado correctamente.');
       setSelectedGoal(null);
       setAmount('');

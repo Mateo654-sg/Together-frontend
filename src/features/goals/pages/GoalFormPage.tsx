@@ -47,6 +47,7 @@ export default function GoalFormPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       navigate('/goals');
     },
   });

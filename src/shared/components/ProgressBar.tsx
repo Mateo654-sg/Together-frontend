@@ -1,11 +1,13 @@
+import { toFiniteNumber } from '@/shared/utils/format';
+
 interface ProgressBarProps {
-  progress: number;
+  progress: number | string | null | undefined;
   color?: string;
   height?: number;
 }
 
 export function ProgressBar({ progress, color = 'var(--color-brand-500)', height = 6 }: ProgressBarProps) {
-  const clamped = Math.min(Math.max(progress, 0), 100);
+  const clamped = Math.min(Math.max(toFiniteNumber(progress), 0), 100);
   return (
     <div className="progress-bar" style={{ height }}>
       <div

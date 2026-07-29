@@ -25,6 +25,7 @@ export default function IncomeDetailPage() {
     mutationFn: () => incomesApi.remove(id!),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['incomes'] });
+      queryClient.invalidateQueries({ queryKey: ['expenses', 'balance'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       navigate('/activity');
     },

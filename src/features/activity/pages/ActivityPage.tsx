@@ -11,7 +11,7 @@ import { MoneyDisplay } from '@/shared/components/MoneyDisplay';
 import { EmptyState } from '@/shared/components/EmptyState';
 import { ErrorState } from '@/shared/components/ErrorState';
 import { SkeletonCard } from '@/shared/components/Skeleton';
-import { formatRelative } from '@/shared/utils/format';
+import { formatRelative, toFiniteNumber } from '@/shared/utils/format';
 
 import type { Expense, Income } from '@/types/api';
 
@@ -104,6 +104,7 @@ export default function ActivityPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['incomes'] });
+      queryClient.invalidateQueries({ queryKey: ['expenses', 'balance'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
@@ -115,6 +116,7 @@ export default function ActivityPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['incomes'] });
+      queryClient.invalidateQueries({ queryKey: ['expenses', 'balance'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
@@ -124,7 +126,7 @@ export default function ActivityPage() {
       id: e.id,
       _type: 'expense' as const,
       description: e.description,
-      amount: e.amount,
+      amount: toFiniteNumber(e.amount),
       date: e.expense_date,
       createdAt: e.created_at,
       category: e.payment_method === 'Ahorro' && e.notes ? e.notes : 'Gasto',
@@ -133,7 +135,7 @@ export default function ActivityPage() {
       id: i.id,
       _type: 'income' as const,
       description: i.description,
-      amount: i.amount,
+      amount: toFiniteNumber(i.amount),
       date: i.income_date,
       createdAt: i.created_at,
       category: 'Ingreso',
@@ -292,7 +294,7 @@ export default function ActivityPage() {
                     </div>
                     <div className={`activity-row__indicator activity-row__indicator--${item._type}`} aria-hidden="true" />
                     <div className="activity-row__amount">
-                      <MoneyDisplay amount={item.amount} size="md" color={item._type === 'expense' ? 'negative' : 'positive'} />
+                      <MoneyDisplay amount={item._type === 'expense' ? -item.amount : item.amount} size="md" color={item._type === 'expense' ? 'negative' : 'positive'} />
                     </div>
                     <div className="activity-row__actions" onClick={(event) => event.stopPropagation()}>
                       <button type="button" title="Editar" onClick={() => navigate(item._type === 'expense' ? `/expenses/${item.id}/edit` : `/incomes/${item.id}/edit`)}><Edit2 size={14} /></button>
