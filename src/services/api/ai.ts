@@ -39,7 +39,7 @@ export const aiApi = {
     return response.data;
   },
   async simulate(data: { scenario: string; monthly_amount?: number; months?: number }): Promise<AISimulator> {
-    const response = await apiClient.post<AISimulator>('/ai/simulator', data);
+    const response = await apiClient.post<AISimulator>('/ai/simulate', data);
     return response.data;
   },
   async getHistory(params?: PaginationParams): Promise<PaginatedList<AIHistoryEntry>> {

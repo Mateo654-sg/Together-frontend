@@ -119,9 +119,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ isLoading: true });
     try {
       const accessToken = tokenStorage.getAccessToken();
-      const refreshToken = tokenStorage.getRefreshToken();
 
-      if (!accessToken || !refreshToken) {
+      if (!accessToken) {
         set({ isLoading: false, isAuthenticated: false });
         return;
       }

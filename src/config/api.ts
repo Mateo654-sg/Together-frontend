@@ -1,7 +1,6 @@
 /**
  * @module api/client
- * @description Cliente HTTP (Axios) con interceptores JWT, refresh automático y cola de reintentos.
- * Versión web: usa localStorage en lugar de expo-secure-store.
+ * @description Cliente HTTP (Axios) con interceptores JWT, refresh automático vía cookie HttpOnly y cola de reintentos.
  */
 
 import axios, {
@@ -14,7 +13,6 @@ import type { ApiResponse } from '@/types/api';
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api/v1';
 
 const ACCESS_TOKEN_KEY = 'together_access_token';
-const REFRESH_TOKEN_KEY = 'together_refresh_token';
 
 let isRefreshing = false;
 let failedQueue: Array<{
@@ -33,25 +31,16 @@ const processQueue = (error: unknown, token: string | null) => {
   failedQueue = [];
 };
 
-// ── Token Storage (localStorage) ──────────────────────────
+// ── Token Storage (solo access_token en localStorage) ──────
 export const tokenStorage = {
   getAccessToken(): string | null {
     try { return localStorage.getItem(ACCESS_TOKEN_KEY); } catch { return null; }
   },
-  getRefreshToken(): string | null {
-    try { return localStorage.getItem(REFRESH_TOKEN_KEY); } catch { return null; }
-  },
-  setTokens(accessToken: string, refreshToken: string): void {
-    try {
-      localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
-      localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-    } catch (e) { console.error('Failed to store tokens:', e); }
+  setAccessToken(token: string): void {
+    try { localStorage.setItem(ACCESS_TOKEN_KEY, token); } catch (e) { console.error('Failed to store access token:', e); }
   },
   clearTokens(): void {
-    try {
-      localStorage.removeItem(ACCESS_TOKEN_KEY);
-      localStorage.removeItem(REFRESH_TOKEN_KEY);
-    } catch (e) { console.error('Failed to clear tokens:', e); }
+    try { localStorage.removeItem(ACCESS_TOKEN_KEY); } catch (e) { console.error('Failed to clear tokens:', e); }
   },
 };
 
@@ -63,6 +52,7 @@ const apiClient = axios.create({
     'Content-Type': 'application/json',
     Accept: 'application/json',
   },
+  withCredentials: true,
 });
 
 // ── Request Interceptor ────────────────────────────────────
@@ -77,7 +67,7 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ── Response Interceptor (auto refresh) ───────────────────
+// ── Response Interceptor (auto refresh vía cookie) ────────
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   async (error: AxiosError<ApiResponse<unknown>>) => {
@@ -124,20 +114,19 @@ apiClient.interceptors.response.use(
     isRefreshing = true;
 
     try {
-      const refreshToken = tokenStorage.getRefreshToken();
-      if (!refreshToken) throw new Error('No refresh token available');
-
       const refreshResponse = await axios.post<{
         access_token: string;
-        refresh_token: string;
       }>(
         `${API_BASE_URL}/auth/refresh`,
-        { refresh_token: refreshToken },
-        { headers: { 'Content-Type': 'application/json' } }
+        {},
+        {
+          headers: { 'Content-Type': 'application/json' },
+          withCredentials: true,
+        }
       );
 
-      const { access_token, refresh_token } = refreshResponse.data;
-      tokenStorage.setTokens(access_token, refresh_token);
+      const { access_token } = refreshResponse.data;
+      tokenStorage.setAccessToken(access_token);
       processQueue(null, access_token);
 
       if (originalRequest.headers) {
@@ -147,7 +136,6 @@ apiClient.interceptors.response.use(
     } catch (refreshError) {
       processQueue(refreshError, null);
       tokenStorage.clearTokens();
-      // Redirect to login
       window.location.href = '/login';
       return Promise.reject(refreshError);
     } finally {

@@ -9,7 +9,7 @@ export interface PaginationParams { page?: number; limit?: number; }
 export interface LoginInput { email: string; password: string; }
 export interface RegisterInput { first_name: string; last_name: string; email: string; password: string; }
 export interface ChangePasswordInput { current_password: string; new_password: string; }
-export interface TokenResponse { access_token: string; refresh_token: string; token_type: string; }
+export interface TokenResponse { access_token: string; refresh_token?: string; token_type: string; }
 
 // ─── User ───────────────────────────────────────────────────
 export interface User {
