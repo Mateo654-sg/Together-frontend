@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { FileText, Download, BarChart3, TrendingDown, TrendingUp } from 'lucide-react';
 import { reportsApi } from '@/services/api';
 import { Card, CardGrid } from '@/shared/components/Card';
@@ -18,9 +18,15 @@ import type { Report } from '@/types/api';
 
 export default function ReportsPage() {
   const [type, setType] = useState('monthly');
+  const queryClient = useQueryClient();
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['reports'],
     queryFn: () => reportsApi.getAll(),
+  });
+
+  const generateMutation = useMutation({
+    mutationFn: () => reportsApi.create({ report_type: type }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['reports'] }),
   });
 
   const reports: Report[] = data?.data ?? [];
@@ -34,8 +40,8 @@ export default function ReportsPage() {
     <div>
       <div className="dashboard-header">
         <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--color-text-primary)' }}>Reportes</h1>
-        <button className="btn btn--primary btn--sm">
-          <Download size={14} /> Generar Reporte
+        <button className="btn btn--primary btn--sm" onClick={() => generateMutation.mutate()} disabled={generateMutation.isPending}>
+          <Download size={14} /> {generateMutation.isPending ? 'Generando...' : 'Generar Reporte'}
         </button>
       </div>
 

@@ -1,8 +1,21 @@
 import { format as dateFnsFormat, formatDistanceToNow, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 
+const CURRENCY_LOCALE: Record<string, string> = {
+  COP: 'es-CO',
+  USD: 'en-US',
+  EUR: 'es-ES',
+  GBP: 'en-GB',
+  BRL: 'pt-BR',
+  MXN: 'es-MX',
+  ARS: 'es-AR',
+  CLP: 'es-CL',
+  PEN: 'es-PE',
+};
+
 export function formatCurrency(amount: number, currency = 'COP'): string {
-  return new Intl.NumberFormat('es-CO', {
+  const locale = CURRENCY_LOCALE[currency] ?? 'es-CO';
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency,
     minimumFractionDigits: 0,

@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Bell, CheckCheck, RefreshCw } from 'lucide-react';
 import { notificationsApi } from '@/services/api';
 import { Card } from '@/shared/components/Card';
@@ -10,9 +10,15 @@ import { formatRelative } from '@/shared/utils/format';
 import type { Notification } from '@/types/api';
 
 export default function NotificationsPage() {
+  const queryClient = useQueryClient();
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['notifications'],
     queryFn: () => notificationsApi.getAll(),
+  });
+
+  const markAllRead = useMutation({
+    mutationFn: () => notificationsApi.markAllAsRead(),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
   });
 
   const notifications: Notification[] = data?.data ?? [];
@@ -32,7 +38,7 @@ export default function NotificationsPage() {
           Notificaciones
         </h1>
         <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-          <button className="btn btn--ghost btn--sm"><CheckCheck size={14} /> Marcar todas leídas</button>
+          <button className="btn btn--ghost btn--sm" onClick={() => markAllRead.mutate()} disabled={markAllRead.isPending}><CheckCheck size={14} /> {markAllRead.isPending ? 'Marcando...' : 'Marcar todas leídas'}</button>
           <button className="btn btn--secondary btn--sm" onClick={() => refetch()}><RefreshCw size={14} /></button>
         </div>
       </div>

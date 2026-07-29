@@ -47,7 +47,7 @@ export default function ExpenseFormPage() {
   const mutation = useMutation({
     mutationFn: () => {
       const payload = {
-        amount: parseFloat(amount),
+        amount: parseFloat(amount) || 0,
         description,
         expense_date: expenseDate,
         ...(categoryId && { category_id: categoryId }),

@@ -1,5 +1,13 @@
 import { formatCurrency } from '@/shared/utils/format';
 
+const COLOR_CLASSES: Record<string, string> = {
+  default: '',
+  positive: 'money--positive',
+  negative: 'money--negative',
+  primary: 'money--primary',
+  muted: 'money--muted',
+};
+
 interface MoneyDisplayProps {
   amount: number;
   size?: 'sm' | 'md' | 'lg' | 'xl';
@@ -9,13 +17,7 @@ interface MoneyDisplayProps {
 
 export function MoneyDisplay({ amount, size = 'md', color = 'default', currency }: MoneyDisplayProps) {
   const formatted = formatCurrency(amount, currency);
-  const colorClass = {
-    default: '',
-    positive: 'money--positive',
-    negative: 'money--negative',
-    primary: 'money--primary',
-    muted: 'money--muted',
-  }[color];
+  const colorClass = COLOR_CLASSES[color];
 
   return (
     <span className={`money money--${size} ${colorClass}`}>

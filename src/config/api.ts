@@ -85,10 +85,8 @@ apiClient.interceptors.response.use(
       originalRequest._url = originalRequest.url ?? '';
     }
 
-    const isAuthRequest =
-      originalRequest._url.includes('/auth/login') ||
-      originalRequest._url.includes('/auth/register') ||
-      originalRequest._url.includes('/auth/google');
+    const AUTH_PATHS = ['/auth/login', '/auth/register', '/auth/google'];
+    const isAuthRequest = AUTH_PATHS.some((p) => originalRequest._url?.endsWith(p));
 
     if (error.response?.status !== 401 || originalRequest._retry || isAuthRequest) {
       const apiError: ApiResponse<unknown> = error.response?.data ?? {

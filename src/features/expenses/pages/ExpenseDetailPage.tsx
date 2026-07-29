@@ -1,12 +1,22 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Trash2, Edit3 } from 'lucide-react';
-import { expensesApi } from '@/services/api';
+import { expensesApi, categoriesApi } from '@/services/api';
 import { Card } from '@/shared/components/Card';
 import { MoneyDisplay } from '@/shared/components/MoneyDisplay';
 import { SkeletonCard } from '@/shared/components/Skeleton';
 import { ErrorState } from '@/shared/components/ErrorState';
 import { formatDate, formatRelative } from '@/shared/utils/format';
+
+function useCategoryName(categoryId: string | null): string {
+  const { data: categories } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => categoriesApi.getAll(),
+  });
+  if (!categoryId || !categories) return 'Sin categoría';
+  const cat = categories.find((c) => c.id === categoryId);
+  return cat?.name ?? 'Sin categoría';
+}
 
 export default function ExpenseDetailPage() {
   const { id } = useParams();
@@ -18,6 +28,7 @@ export default function ExpenseDetailPage() {
     queryFn: () => expensesApi.getById(id!),
     enabled: !!id,
   });
+  const categoryName = useCategoryName(expense?.category_id ?? null);
 
   const deleteMutation = useMutation({
     mutationFn: () => expensesApi.remove(id!),
@@ -70,7 +81,7 @@ export default function ExpenseDetailPage() {
           <div>
             <div className="stat-card__label">Categoría</div>
             <div style={{ color: 'var(--color-text-primary)', fontSize: 'var(--text-sm)', marginTop: 4 }}>
-              {expense.category_id || 'Sin categoría'}
+              {categoryName}
             </div>
           </div>
           <div>

@@ -64,7 +64,7 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="dashboard-period">
-          Últimos 30 días
+          {new Date().toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })}
         </div>
       </div>
 

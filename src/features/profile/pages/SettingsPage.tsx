@@ -35,6 +35,10 @@ export default function SettingsPage() {
       .finally(() => setLoading(false));
   }, [user]);
 
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
   const handleSave = async () => {
     setSaving(true);
     setError(false);
