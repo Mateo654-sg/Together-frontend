@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, UserPlus, Heart } from 'lucide-react';
 import { useAuthStore } from '@/features/auth/store/auth-store';
+import GoogleSignInButton from '@/features/auth/components/GoogleSignInButton';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -126,6 +127,12 @@ export default function RegisterPage() {
             )}
           </button>
         </form>
+
+        <div className="auth-divider">
+          <span>o continúa con</span>
+        </div>
+
+        <GoogleSignInButton />
 
         <p className="auth-footer">
           ¿Ya tienes cuenta?{' '}
