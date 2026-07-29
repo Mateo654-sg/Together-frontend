@@ -34,7 +34,7 @@ export function AppLayout() {
 
   return (
     <div className="app-layout">
-      <a href="#main-content" className="skip-link">Saltar al contenido principal</a>
+      {/*<a href="#main-content" className="skip-link">Saltar al contenido principal</a>*/}
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />

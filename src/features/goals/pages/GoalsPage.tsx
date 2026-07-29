@@ -1,8 +1,10 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Plus, PiggyBank, Target, CheckCircle, Clock } from 'lucide-react';
-import { goalsApi } from '@/services/api';
-import { Card, CardGrid } from '@/shared/components/Card';
+import { useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  CheckCircle, Clock, PiggyBank, Plus, Sparkles, Target, Trophy, Wallet, X,
+} from 'lucide-react';
+import { goalsApi, expensesApi } from '@/services/api';
+import { Card } from '@/shared/components/Card';
 import { MoneyDisplay } from '@/shared/components/MoneyDisplay';
 import { ProgressBar } from '@/shared/components/ProgressBar';
 import { EmptyState } from '@/shared/components/EmptyState';
@@ -13,95 +15,271 @@ import { useNavigate } from 'react-router-dom';
 
 import type { Goal } from '@/types/api';
 
+type GoalFilter = 'active' | 'completed' | 'all';
+
+const GOAL_ICONS = ['✈️', '🏠', '🚗', '💻', '🎓', '💍', '🌴', '🎯'];
+
+function getProgress(goal: Goal) {
+  const progress = goal.progress_percentage ?? (goal.target_amount > 0 ? (goal.current_amount / goal.target_amount) * 100 : 0);
+  return Math.min(Math.max(Math.round(progress), 0), 100);
+}
+
+function getRemaining(goal: Goal) {
+  return Math.max(goal.target_amount - goal.current_amount, 0);
+}
+
 export default function GoalsPage() {
   const navigate = useNavigate();
-  const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
+  const queryClient = useQueryClient();
+  const [filter, setFilter] = useState<GoalFilter>('active');
+  const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
+  const [amount, setAmount] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['goals'],
-    queryFn: () => goalsApi.getAll(),
+    queryFn: () => goalsApi.getAll({ limit: 100 }),
+  });
+
+  const { data: balanceData } = useQuery({
+    queryKey: ['expenses', 'balance'],
+    queryFn: () => expensesApi.getBalance(),
   });
 
   const goals: Goal[] = data?.data ?? [];
-  const filtered: Goal[] = filter === 'all' ? goals : goals.filter((g: Goal) => g.status === filter);
+  const availableBalance = balanceData?.balance ?? 0;
 
-  const statusIcons = { active: Target, completed: CheckCircle, cancelled: Clock } as const;
-  const statusColors = { active: 'var(--color-brand-500)', completed: 'var(--color-success)', cancelled: 'var(--color-text-muted)' } as const;
+  const filtered = useMemo(() => {
+    if (filter === 'all') return goals;
+    return goals.filter((goal) => goal.status === filter);
+  }, [filter, goals]);
+
+  const summary = useMemo(() => {
+    const active = goals.filter((goal) => goal.status === 'active');
+    const completed = goals.filter((goal) => goal.status === 'completed');
+    const nextGoal = [...active].sort((a, b) => getRemaining(a) - getRemaining(b))[0];
+
+    return {
+      active: active.length,
+      completed: completed.length,
+      totalSaved: goals.reduce((acc, goal) => acc + goal.current_amount, 0),
+      nextGoal,
+    };
+  }, [goals]);
+
+  const parsedAmount = Number(amount);
+  const amountError = useMemo(() => {
+    if (!selectedGoal || amount === '') return '';
+    if (!Number.isFinite(parsedAmount)) return 'Ingresa un monto válido.';
+    if (parsedAmount <= 0) return 'El aporte debe ser mayor que cero.';
+    if (parsedAmount > availableBalance) return 'No puedes aportar más que tu saldo disponible.';
+    if (selectedGoal.status !== 'active') return 'Esta meta ya no está activa.';
+    return '';
+  }, [amount, availableBalance, parsedAmount, selectedGoal]);
+
+  const contributeMutation = useMutation({
+    mutationFn: () => goalsApi.contribute(selectedGoal!.id, parsedAmount, new Date().toISOString().split('T')[0]),
+    onSuccess: async () => {
+      const completed = selectedGoal ? selectedGoal.current_amount + parsedAmount >= selectedGoal.target_amount : false;
+      setSuccessMessage(completed ? '¡Felicidades! Has completado tu meta de ahorro.' : 'Aporte registrado correctamente.');
+      setSelectedGoal(null);
+      setAmount('');
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['goals'] }),
+        queryClient.invalidateQueries({ queryKey: ['expenses'] }),
+        queryClient.invalidateQueries({ queryKey: ['expenses', 'balance'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+      ]);
+      window.setTimeout(() => setSuccessMessage(''), 4200);
+    },
+  });
+
+  const openContributionModal = (goal: Goal) => {
+    setSelectedGoal(goal);
+    setAmount('');
+  };
 
   if (isLoading) return (
     <div>
-      <div className="dashboard-header"><h1>Metas</h1></div>
-      <SkeletonCard count={3} />
+      <div className="dashboard-header"><h1>Metas de ahorro</h1></div>
+      <SkeletonCard count={6} />
     </div>
   );
+
   if (isError) return <ErrorState onRetry={refetch} />;
 
   return (
-    <div>
-      <div className="dashboard-header">
-        <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--color-text-primary)' }}>Metas de Ahorro</h1>
-        <button className="btn btn--primary btn--sm" onClick={() => navigate('/goals/new')}>
-          <Plus size={14} /> Nueva Meta
+    <div className="goals-screen">
+      {successMessage && (
+        <div className="goals-toast" role="status">
+          <Trophy size={18} /> {successMessage}
+        </div>
+      )}
+
+      <div className="goals-header">
+        <div>
+          <h1>Metas de ahorro</h1>
+          <p>Administra y sigue el progreso de tus objetivos financieros.</p>
+        </div>
+        <button className="btn btn--primary" type="button" onClick={() => navigate('/goals/new')}>
+          <Plus size={18} /> Nueva meta
         </button>
       </div>
 
-      <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-6)' }}>
-        {(['all', 'active', 'completed'] as const).map((f) => (
+      <div className="goals-summary-grid">
+        <Card className="goals-summary-card">
+          <div className="goals-summary-card__icon goals-summary-card__icon--active"><Target size={18} /></div>
+          <span>Metas activas</span>
+          <strong>{summary.active}</strong>
+        </Card>
+        <Card className="goals-summary-card">
+          <div className="goals-summary-card__icon goals-summary-card__icon--saved"><Wallet size={18} /></div>
+          <span>Total ahorrado</span>
+          <MoneyDisplay amount={summary.totalSaved} size="lg" color="primary" />
+        </Card>
+        <Card className="goals-summary-card">
+          <div className="goals-summary-card__icon goals-summary-card__icon--completed"><CheckCircle size={18} /></div>
+          <span>Metas completadas</span>
+          <strong>{summary.completed}</strong>
+        </Card>
+        <Card className="goals-summary-card goals-summary-card--next">
+          <div className="goals-summary-card__icon goals-summary-card__icon--next"><Sparkles size={18} /></div>
+          <span>Próxima meta</span>
+          <strong>{summary.nextGoal ? summary.nextGoal.title : 'Sin metas activas'}</strong>
+        </Card>
+      </div>
+
+      <div className="goals-toolbar">
+        {(['active', 'completed', 'all'] as const).map((value) => (
           <button
-            key={f}
-            className={`btn btn--sm ${filter === f ? 'btn--primary' : 'btn--secondary'}`}
-            onClick={() => setFilter(f)}
+            key={value}
+            type="button"
+            className={`activity-chip ${filter === value ? 'activity-chip--active' : ''}`}
+            onClick={() => setFilter(value)}
           >
-            {f === 'all' ? 'Todas' : f === 'active' ? 'Activas' : 'Completadas'}
+            {value === 'active' ? 'Activas' : value === 'completed' ? 'Completadas' : 'Todas'}
           </button>
         ))}
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState
-          icon={PiggyBank}
-          title={filter === 'all' ? 'Sin metas de ahorro' : 'No hay metas en este estado'}
-          message="Define tus metas financieras y empieza a ahorrar"
-          action={{ label: 'Crear Meta', onClick: () => navigate('/goals/new') }}
-        />
+        <Card hover={false} className="goals-empty-card">
+          <EmptyState
+            icon={PiggyBank}
+            title={filter === 'all' ? 'Todavía no tienes metas' : 'No hay metas en este estado'}
+            message="Empieza creando tu primer objetivo financiero."
+            action={{ label: 'Crear meta', onClick: () => navigate('/goals/new') }}
+          />
+        </Card>
       ) : (
-        <CardGrid columns={2}>
-          {filtered.map((goal) => {
-            const StatusIcon = statusIcons[goal.status];
+        <div className="goals-grid">
+          {filtered.map((goal, index) => {
+            const progress = getProgress(goal);
+            const remaining = getRemaining(goal);
+            const completed = goal.status === 'completed';
+
             return (
-              <Card key={goal.id} onClick={() => navigate(`/goals/${goal.id}`)}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--space-4)' }}>
-                  <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--color-text-primary)' }}>{goal.title}</h3>
-                  <StatusIcon size={18} color={statusColors[goal.status as keyof typeof statusColors]} />
-                </div>
-                {goal.description && (
-                  <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-3)' }}>
-                    {goal.description}
-                  </p>
-                )}
-                <div style={{ marginBottom: 'var(--space-3)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>Progreso</span>
-                    <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--color-text-primary)' }}>
-                      {goal.progress_percentage ?? 0}%
+              <Card key={goal.id} className={`goal-card ${completed ? 'goal-card--completed' : ''}`} hover>
+                <div className="goal-card__header">
+                  <div className="goal-card__icon" aria-hidden="true">{completed ? '🎉' : GOAL_ICONS[index % GOAL_ICONS.length]}</div>
+                  <div className="goal-card__title-wrap">
+                    <h2>{goal.title}</h2>
+                    <span className={`goal-status goal-status--${goal.status}`}>
+                      {completed ? <CheckCircle size={13} /> : <Clock size={13} />}
+                      {completed ? 'Completada' : 'Activa'}
                     </span>
                   </div>
-                  <ProgressBar progress={goal.progress_percentage ?? 0} />
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <MoneyDisplay amount={goal.current_amount} size="sm" color="primary" />
-                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
-                    de {formatCurrency(goal.target_amount)}
-                  </span>
+
+                {goal.description && <p className="goal-card__description">{goal.description}</p>}
+
+                <div className="goal-card__amounts">
+                  <MoneyDisplay amount={goal.current_amount} size="md" color={completed ? 'positive' : 'primary'} />
+                  <span>/ {formatCurrency(goal.target_amount)}</span>
                 </div>
-                {goal.target_date && (
-                  <div style={{ marginTop: 'var(--space-2)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
-                    Meta: {formatDate(goal.target_date)}
+
+                <div className="goal-card__progress">
+                  <div className="goal-card__progress-top">
+                    <span>Progreso</span>
+                    <strong>{progress}%</strong>
                   </div>
-                )}
+                  <ProgressBar progress={progress} height={9} />
+                </div>
+
+                <div className="goal-card__meta">
+                  <span>Faltan {formatCurrency(remaining)}</span>
+                  {goal.target_date && <span>Meta: {formatDate(goal.target_date)}</span>}
+                </div>
+
+                <div className="goal-card__actions">
+                  <button
+                    className="btn btn--primary btn--sm"
+                    type="button"
+                    onClick={() => openContributionModal(goal)}
+                    disabled={completed}
+                  >
+                    Aportar
+                  </button>
+                  <button className="btn btn--ghost btn--sm" type="button" onClick={() => navigate(`/goals/${goal.id}`)}>
+                    Ver detalle
+                  </button>
+                </div>
               </Card>
             );
           })}
-        </CardGrid>
+        </div>
+      )}
+
+      {selectedGoal && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={() => setSelectedGoal(null)}>
+          <div className="contribution-modal" role="dialog" aria-modal="true" aria-labelledby="contribution-title" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="contribution-modal__header">
+              <div>
+                <h2 id="contribution-title">Aportar a la meta</h2>
+                <p>Meta: {selectedGoal.title}</p>
+              </div>
+              <button type="button" className="contribution-modal__close" onClick={() => setSelectedGoal(null)} aria-label="Cerrar modal">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="contribution-modal__balance">
+              <span>Saldo disponible</span>
+              <MoneyDisplay amount={availableBalance} size="lg" color={availableBalance > 0 ? 'positive' : 'muted'} />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="contribution-amount">Monto a aportar</label>
+              <input
+                id="contribution-amount"
+                type="number"
+                min="0"
+                step="0.01"
+                inputMode="decimal"
+                value={amount}
+                onChange={(event) => setAmount(event.target.value)}
+                placeholder="0"
+                autoFocus
+              />
+              {amountError && <p className="form-error">{amountError}</p>}
+              {contributeMutation.isError && <p className="form-error">No se pudo registrar el aporte. Revisa el monto e inténtalo de nuevo.</p>}
+            </div>
+
+            <div className="contribution-modal__actions">
+              <button className="btn btn--secondary" type="button" onClick={() => setSelectedGoal(null)}>
+                Cancelar
+              </button>
+              <button
+                className="btn btn--primary"
+                type="button"
+                disabled={!amount || !!amountError || contributeMutation.isPending}
+                onClick={() => contributeMutation.mutate()}
+              >
+                {contributeMutation.isPending ? <span className="btn__loader" /> : 'Aportar dinero'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

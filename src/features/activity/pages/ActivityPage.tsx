@@ -24,6 +24,7 @@ type ActivityItem = {
   description: string;
   amount: number;
   date: string;
+  createdAt: string;
   category: string;
 };
 
@@ -34,6 +35,7 @@ const FILTERS: { key: FilterType; label: string }[] = [
 ];
 
 function getMovementIcon(item: ActivityItem) {
+  if (item.category !== 'Gasto' && item.description.toLowerCase().includes('aporte a meta')) return '💰';
   if (item._type === 'income') return '💼';
   const text = item.description.toLowerCase();
   if (text.includes('comida') || text.includes('pan') || text.includes('restaurant')) return '🍔';
@@ -124,7 +126,8 @@ export default function ActivityPage() {
       description: e.description,
       amount: e.amount,
       date: e.expense_date,
-      category: 'Gasto',
+      createdAt: e.created_at,
+      category: e.payment_method === 'Ahorro' && e.notes ? e.notes : 'Gasto',
     }));
     const incomes: ActivityItem[] = (incomesQuery.data?.pages.flatMap(p => p.data) ?? []).map((i: Income) => ({
       id: i.id,
@@ -132,6 +135,7 @@ export default function ActivityPage() {
       description: i.description,
       amount: i.amount,
       date: i.income_date,
+      createdAt: i.created_at,
       category: 'Ingreso',
     }));
     return [...expenses, ...incomes];
@@ -152,14 +156,14 @@ export default function ActivityPage() {
     }
 
     return [...items].sort((a, b) => {
-      const diff = new Date(b.date).getTime() - new Date(a.date).getTime();
+      const diff = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       return sort === 'newest' ? diff : -diff;
     });
   }, [allItems, filter, search, sort]);
 
   const grouped = useMemo(() => {
     return filtered.reduce<Record<string, ActivityItem[]>>((groups, item) => {
-      const label = getGroupLabel(item.date);
+      const label = getGroupLabel(item.createdAt);
       groups[label] = groups[label] ? [...groups[label], item] : [item];
       return groups;
     }, {});
@@ -283,7 +287,7 @@ export default function ActivityPage() {
                       <div className="activity-row__title">{item.description}</div>
                       <div className="activity-row__meta">
                         <span>{item.category}</span>
-                        <span>{formatRelative(item.date)}</span>
+                        <span>{formatRelative(item.createdAt)}</span>
                       </div>
                     </div>
                     <div className={`activity-row__indicator activity-row__indicator--${item._type}`} aria-hidden="true" />
