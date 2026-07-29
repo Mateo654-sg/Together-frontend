@@ -1,22 +1,13 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Trash2, Edit3 } from 'lucide-react';
-import { expensesApi, categoriesApi } from '@/services/api';
+import { expensesApi } from '@/services/api';
 import { Card } from '@/shared/components/Card';
 import { MoneyDisplay } from '@/shared/components/MoneyDisplay';
 import { SkeletonCard } from '@/shared/components/Skeleton';
 import { ErrorState } from '@/shared/components/ErrorState';
 import { formatDate, formatRelative } from '@/shared/utils/format';
-
-function useCategoryName(categoryId: string | null): string {
-  const { data: categories } = useQuery({
-    queryKey: ['categories'],
-    queryFn: () => categoriesApi.getAll(),
-  });
-  if (!categoryId || !categories) return 'Sin categoría';
-  const cat = categories.find((c) => c.id === categoryId);
-  return cat?.name ?? 'Sin categoría';
-}
+import { useCategoryName } from '@/shared/hooks/useCategoryName';
 
 export default function ExpenseDetailPage() {
   const { id } = useParams();
@@ -34,7 +25,8 @@ export default function ExpenseDetailPage() {
     mutationFn: () => expensesApi.remove(id!),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
-      navigate('/expenses');
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      navigate('/activity');
     },
   });
 

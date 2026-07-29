@@ -9,10 +9,8 @@ const RegisterPage = lazy(() => import('@/features/auth/pages/RegisterPage'));
 const ForgotPasswordPage = lazy(() => import('@/features/auth/pages/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('@/features/auth/pages/ResetPasswordPage'));
 const DashboardPage = lazy(() => import('@/features/dashboard/pages/DashboardPage'));
-const ExpensesPage = lazy(() => import('@/features/expenses/pages/ExpensesPage'));
 const ExpenseDetailPage = lazy(() => import('@/features/expenses/pages/ExpenseDetailPage'));
 const ExpenseFormPage = lazy(() => import('@/features/expenses/pages/ExpenseFormPage'));
-const IncomesPage = lazy(() => import('@/features/incomes/pages/IncomesPage'));
 const IncomeDetailPage = lazy(() => import('@/features/incomes/pages/IncomeDetailPage'));
 const IncomeFormPage = lazy(() => import('@/features/incomes/pages/IncomeFormPage'));
 const GoalsPage = lazy(() => import('@/features/goals/pages/GoalsPage'));
@@ -54,11 +52,11 @@ export function Router() {
         <Route element={<AppLayout />}>
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<SuspenseWrapper><DashboardPage /></SuspenseWrapper>} />
-          <Route path="/expenses" element={<SuspenseWrapper><ExpensesPage /></SuspenseWrapper>} />
+          <Route path="/expenses" element={<Navigate to="/activity" replace />} />
           <Route path="/expenses/new" element={<SuspenseWrapper><ExpenseFormPage /></SuspenseWrapper>} />
           <Route path="/expenses/:id/edit" element={<SuspenseWrapper><ExpenseFormPage /></SuspenseWrapper>} />
           <Route path="/expenses/:id" element={<SuspenseWrapper><ExpenseDetailPage /></SuspenseWrapper>} />
-          <Route path="/incomes" element={<SuspenseWrapper><IncomesPage /></SuspenseWrapper>} />
+          <Route path="/incomes" element={<Navigate to="/activity" replace />} />
           <Route path="/incomes/new" element={<SuspenseWrapper><IncomeFormPage /></SuspenseWrapper>} />
           <Route path="/incomes/:id/edit" element={<SuspenseWrapper><IncomeFormPage /></SuspenseWrapper>} />
           <Route path="/incomes/:id" element={<SuspenseWrapper><IncomeDetailPage /></SuspenseWrapper>} />

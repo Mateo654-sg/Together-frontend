@@ -61,7 +61,8 @@ export default function ExpenseFormPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
-      navigate('/expenses');
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      navigate('/activity');
     },
   });
 

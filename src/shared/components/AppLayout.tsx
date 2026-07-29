@@ -3,7 +3,6 @@ import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
 import {
   LayoutDashboard,
   ArrowLeftRight,
-  DollarSign,
   Target,
   Bot,
   User,
@@ -17,7 +16,6 @@ import { useAuthStore } from '@/features/auth/store/auth-store';
 const navItems = [
   { path: '/dashboard', label: 'Inicio', icon: LayoutDashboard },
   { path: '/activity', label: 'Actividad', icon: ArrowLeftRight },
-  { path: '/incomes', label: 'Ingresos', icon: DollarSign },
   { path: '/goals', label: 'Metas', icon: Target },
   { path: '/ai', label: 'IA', icon: Bot },
   { path: '/profile', label: 'Perfil', icon: User },

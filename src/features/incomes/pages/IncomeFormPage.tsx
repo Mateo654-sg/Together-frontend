@@ -55,7 +55,8 @@ export default function IncomeFormPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['incomes'] });
-      navigate('/incomes');
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      navigate('/activity');
     },
   });
 

@@ -1,22 +1,13 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Trash2 } from 'lucide-react';
-import { incomesApi, categoriesApi } from '@/services/api';
+import { incomesApi } from '@/services/api';
 import { Card } from '@/shared/components/Card';
 import { MoneyDisplay } from '@/shared/components/MoneyDisplay';
 import { SkeletonCard } from '@/shared/components/Skeleton';
 import { ErrorState } from '@/shared/components/ErrorState';
 import { formatDate, formatRelative } from '@/shared/utils/format';
-
-function useCategoryName(categoryId: string | null): string {
-  const { data: categories } = useQuery({
-    queryKey: ['categories'],
-    queryFn: () => categoriesApi.getAll(),
-  });
-  if (!categoryId || !categories) return 'Sin categoría';
-  const cat = categories.find((c) => c.id === categoryId);
-  return cat?.name ?? 'Sin categoría';
-}
+import { useCategoryName } from '@/shared/hooks/useCategoryName';
 
 export default function IncomeDetailPage() {
   const { id } = useParams();
@@ -34,7 +25,8 @@ export default function IncomeDetailPage() {
     mutationFn: () => incomesApi.remove(id!),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['incomes'] });
-      navigate('/incomes');
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      navigate('/activity');
     },
   });
 
