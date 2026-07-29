@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import {
-  Wallet, TrendingUp, TrendingDown, PiggyBank,
-  ArrowRight, ArrowUpRight, Bell,
+  ArrowRight, BarChart3, CalendarDays, Lightbulb, PiggyBank,
+  Plus, Target, TrendingDown, TrendingUp, Wallet,
 } from 'lucide-react';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, PieChart, Pie, Cell,
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
+import { Link, useNavigate } from 'react-router-dom';
 import { dashboardApi } from '@/services/api/dashboard';
 import { Card, CardGrid } from '@/shared/components/Card';
 import { MoneyDisplay } from '@/shared/components/MoneyDisplay';
@@ -15,10 +15,38 @@ import { SkeletonCard } from '@/shared/components/Skeleton';
 import { EmptyState } from '@/shared/components/EmptyState';
 import { ErrorState } from '@/shared/components/ErrorState';
 import { useAuthStore } from '@/features/auth/store/auth-store';
-import { formatRelative, formatCurrency, getInitials } from '@/shared/utils/format';
-import { Link, useNavigate } from 'react-router-dom';
+import { formatRelative, formatCurrency } from '@/shared/utils/format';
 
-const CHART_COLORS = ['#FF4D8D', '#10B981', '#3B82F6', '#F59E0B', '#8B5CF6'];
+const CATEGORY_ICONS = ['🍔', '🚗', '🏠', '🛒', '💳'];
+
+function greet() {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Buenos días';
+  if (hour < 18) return 'Buenas tardes';
+  return 'Buenas noches';
+}
+
+function getMovementIcon(type: string, description: string) {
+  if (type === 'income') return '💵';
+  const text = description.toLowerCase();
+  if (text.includes('comida') || text.includes('restaurant') || text.includes('mcdonald')) return '🍔';
+  if (text.includes('mercado') || text.includes('walmart') || text.includes('super')) return '🛒';
+  if (text.includes('transporte') || text.includes('uber') || text.includes('taxi')) return '🚗';
+  return '💳';
+}
+
+function getVariation(current: number, previous?: number) {
+  if (previous === undefined) return { label: 'Sin datos previos', direction: 'neutral' as const };
+  if (previous === 0 && current === 0) return { label: '0%', direction: 'neutral' as const };
+  if (previous === 0) return { label: '+100%', direction: 'up' as const };
+
+  const value = ((current - previous) / Math.abs(previous)) * 100;
+  const rounded = Math.round(value);
+  return {
+    label: `${rounded > 0 ? '+' : ''}${rounded}%`,
+    direction: rounded > 0 ? 'up' as const : rounded < 0 ? 'down' as const : 'neutral' as const,
+  };
+}
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -42,124 +70,107 @@ export default function DashboardPage() {
 
   if (!data) return <EmptyState title="No hay datos del dashboard" />;
 
-  const activityData = data.statistics?.monthly_breakdown;
-  const categoryStats = data.statistics?.top_categories;
+  const activityData = data.statistics?.monthly_breakdown ?? [];
+  const categoryStats = data.statistics?.top_categories ?? [];
+  const previousMonth = activityData.length > 1 ? activityData[activityData.length - 2] : undefined;
+  const previousBalance = previousMonth ? previousMonth.income - previousMonth.expense : undefined;
+  const previousSaving = previousMonth ? Math.max(previousMonth.income - previousMonth.expense, 0) : undefined;
+  const savingsRate = data.income > 0 ? Math.round((data.saving / data.income) * 100) : 0;
+  const topCategory = categoryStats[0];
+  const topCategoryPercentage = topCategory?.percentage_of_total ?? 0;
+  const period = new Date().toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
 
-  const greet = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Buenos días';
-    if (hour < 18) return 'Buenas tardes';
-    return 'Buenas noches';
-  };
+  const kpis = [
+    {
+      title: 'Balance Neto',
+      amount: data.balance,
+      icon: Wallet,
+      iconClass: 'stat-card__icon--savings',
+      color: data.balance >= 0 ? 'positive' as const : 'negative' as const,
+      variation: getVariation(data.balance, previousBalance),
+    },
+    {
+      title: 'Ingresos',
+      amount: data.income,
+      icon: TrendingUp,
+      iconClass: 'stat-card__icon--income',
+      color: 'positive' as const,
+      variation: getVariation(data.income, previousMonth?.income),
+    },
+    {
+      title: 'Gastos',
+      amount: data.expense,
+      icon: TrendingDown,
+      iconClass: 'stat-card__icon--expense',
+      color: 'negative' as const,
+      variation: getVariation(data.expense, previousMonth?.expense),
+    },
+    {
+      title: 'Ahorro',
+      amount: data.saving,
+      icon: PiggyBank,
+      iconClass: 'stat-card__icon--budget',
+      color: 'primary' as const,
+      variation: getVariation(data.saving, previousSaving),
+    },
+  ];
+
+  const insights = [
+    topCategory ? `Tu mayor gasto fue ${topCategory.category_name}.` : 'Registra movimientos para identificar tu mayor gasto.',
+    data.income > 0 ? `Ahorraste el ${savingsRate}% de tus ingresos.` : 'Agrega ingresos para medir tu capacidad de ahorro.',
+    data.cash_flow >= 0 ? 'Vas mejor que el mes anterior.' : 'Tus gastos superaron el flujo del mes.',
+  ];
 
   return (
-    <div>
+    <div className="dashboard-page">
       <div className="dashboard-header">
-        <div>
-          <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--color-text-primary)' }}>
-            {greet()}, {user?.first_name || 'Usuario'}
-          </h1>
-          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginTop: 4 }}>
-            {new Date().toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-          </p>
+        <div className="dashboard-header__intro">
+          <h1>{greet()}, {user?.first_name || 'Usuario'}</h1>
+          <p>{new Date().toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
         </div>
-        <div className="dashboard-period">
-          {new Date().toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })}
+        <div className="dashboard-header__actions">
+          <button className="dashboard-period" type="button">
+            <CalendarDays size={16} /> {period} <span aria-hidden="true">▼</span>
+          </button>
+          <button className="btn btn--primary" type="button" onClick={() => navigate('/expenses/new')}>
+            <Plus size={18} /> Nuevo movimiento
+          </button>
         </div>
       </div>
 
       <CardGrid columns={4}>
-        <Card>
-          <div className="stat-card">
-            <div className="stat-card__icon stat-card__icon--savings"><Wallet size={20} /></div>
-            <div className="stat-card__info">
-              <div className="stat-card__label">Balance Neto</div>
-              <div className="stat-card__value">
-                <MoneyDisplay amount={data.balance} size="lg" color={data.balance >= 0 ? 'positive' : 'negative'} />
+        {kpis.map((kpi) => {
+          const Icon = kpi.icon;
+          return (
+            <Card key={kpi.title} className="dashboard-kpi-card">
+              <div className="stat-card">
+                <div className={`stat-card__icon ${kpi.iconClass}`}><Icon size={20} /></div>
+                <div className="stat-card__info">
+                  <div className="stat-card__label">{kpi.title}</div>
+                  <div className="stat-card__value"><MoneyDisplay amount={kpi.amount} size="lg" color={kpi.color} /></div>
+                  <div className={`stat-card__change stat-card__change--${kpi.variation.direction}`}>
+                    {kpi.variation.direction === 'up' ? '▲ ' : kpi.variation.direction === 'down' ? '▼ ' : ''}{kpi.variation.label}
+                  </div>
+                  <div className="stat-card__context">respecto al mes pasado</div>
+                </div>
               </div>
-              <div className={`stat-card__change ${data.cash_flow >= 0 ? 'stat-card__change--up' : 'stat-card__change--down'}`}>
-                {data.cash_flow >= 0 ? '+' : ''}{formatCurrency(data.cash_flow)} este mes
-              </div>
-            </div>
-          </div>
-        </Card>
-        <Card>
-          <div className="stat-card">
-            <div className="stat-card__icon stat-card__icon--income"><TrendingUp size={20} /></div>
-            <div className="stat-card__info">
-              <div className="stat-card__label">Ingresos</div>
-              <div className="stat-card__value"><MoneyDisplay amount={data.income} size="lg" color="positive" /></div>
-            </div>
-          </div>
-        </Card>
-        <Card>
-          <div className="stat-card">
-            <div className="stat-card__icon stat-card__icon--expense"><TrendingDown size={20} /></div>
-            <div className="stat-card__info">
-              <div className="stat-card__label">Gastos</div>
-              <div className="stat-card__value"><MoneyDisplay amount={data.expense} size="lg" color="negative" /></div>
-            </div>
-          </div>
-        </Card>
-        <Card>
-          <div className="stat-card">
-            <div className="stat-card__icon stat-card__icon--budget"><PiggyBank size={20} /></div>
-            <div className="stat-card__info">
-              <div className="stat-card__label">Ahorro</div>
-              <div className="stat-card__value"><MoneyDisplay amount={data.saving} size="lg" color="primary" /></div>
-            </div>
-          </div>
-        </Card>
+            </Card>
+          );
+        })}
       </CardGrid>
 
-      <div className="info-grid" style={{ marginTop: 'var(--space-6)' }}>
-        <div className="chart-card">
-          <div className="chart-title">Ingresos vs Gastos</div>
-          <div className="chart-container">
-            {activityData ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={activityData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border-subtle)" />
-                  <XAxis dataKey="month" tick={{ fontSize: 12, fill: 'var(--color-text-muted)' }} />
-                  <YAxis tick={{ fontSize: 12, fill: 'var(--color-text-muted)' }} />
-                  <Tooltip
-                    contentStyle={{
-                      background: 'var(--color-bg-surface)',
-                      border: '1px solid var(--color-border-subtle)',
-                      borderRadius: '12px',
-                      color: 'var(--color-text-primary)',
-                    }}
-                  />
-                  <Line type="monotone" dataKey="income" stroke="#10B981" strokeWidth={2} dot={false} name="Ingresos" />
-                  <Line type="monotone" dataKey="expense" stroke="#FF4D8D" strokeWidth={2} dot={false} name="Gastos" />
-                </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>
-                No hay datos de tendencias aún
-              </div>
-            )}
+      <div className="dashboard-main-grid">
+        <Card hover={false} className="dashboard-panel dashboard-panel--chart">
+          <div className="section-header">
+            <h2 className="section-title">Ingresos vs Gastos</h2>
           </div>
-        </div>
-        <div className="chart-card">
-          <div className="chart-title">Categorías</div>
           <div className="chart-container">
-            {categoryStats && categoryStats.length > 0 ? (
+            {activityData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={categoryStats}
-                    dataKey="total_amount"
-                    nameKey="category_name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    innerRadius={50}
-                  >
-                    {categoryStats.map((_, idx) => (
-                      <Cell key={idx} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
-                    ))}
-                  </Pie>
+                <LineChart data={activityData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border-subtle)" />
+                  <XAxis dataKey="month" tick={{ fontSize: 12, fill: 'var(--color-text-muted)' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 12, fill: 'var(--color-text-muted)' }} axisLine={false} tickLine={false} />
                   <Tooltip
                     contentStyle={{
                       background: 'var(--color-bg-surface)',
@@ -169,85 +180,101 @@ export default function DashboardPage() {
                     }}
                     formatter={(value: number) => formatCurrency(value)}
                   />
-                </PieChart>
+                  <Line type="monotone" dataKey="income" stroke="var(--color-success)" strokeWidth={2} dot={false} name="Ingresos" />
+                  <Line type="monotone" dataKey="expense" stroke="var(--color-danger)" strokeWidth={2} dot={false} name="Gastos" />
+                </LineChart>
               </ResponsiveContainer>
             ) : (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>
-                No hay datos de categorías aún
-              </div>
+              <EmptyState icon={BarChart3} title="Todavía no tienes movimientos" message="Registra tu primer ingreso o gasto para ver la tendencia." action={{ label: 'Agregar movimiento', onClick: () => navigate('/expenses/new') }} />
             )}
           </div>
-        </div>
-      </div>
+        </Card>
 
-      <div className="info-grid" style={{ marginTop: 'var(--space-6)' }}>
-        <div className="dashboard-section">
+        <Card hover={false} className="dashboard-panel">
           <div className="section-header">
-            <h2 className="section-title">Actividad Reciente</h2>
-            <Link to="/activity" className="section-link">
-              Ver todo <ArrowRight size={14} />
-            </Link>
+            <h2 className="section-title">Actividad reciente</h2>
+            <Link to="/activity" className="section-link">Ver todo <ArrowRight size={14} /></Link>
           </div>
-          <Card hover={false}>
-            {data.recent_activity.length === 0 ? (
-              <EmptyState icon={Bell} title="Sin actividad reciente" message="Tus transacciones aparecerán aquí" />
-            ) : (
-              data.recent_activity.slice(0, 5).map((item) => (
+          {data.recent_activity.length === 0 ? (
+            <EmptyState icon={Wallet} title="Todavía no tienes actividad" message="Tus últimos ingresos y gastos aparecerán aquí." action={{ label: 'Agregar movimiento', onClick: () => navigate('/expenses/new') }} />
+          ) : (
+            <div className="activity-list">
+              {data.recent_activity.slice(0, 5).map((item) => (
                 <div key={item.id} className="activity-item">
-                  <div className="activity-item__dot" style={{
-                    background: item.type === 'expense' ? 'var(--color-danger)' : 'var(--color-success)',
-                  }} />
+                  <div className="activity-item__emoji" aria-hidden="true">{getMovementIcon(item.type, item.description)}</div>
                   <div className="activity-item__info">
                     <div className="activity-item__title">{item.description}</div>
                     <div className="activity-item__date">{formatRelative(item.date)}</div>
                   </div>
                   <div className="activity-item__amount">
-                    <MoneyDisplay
-                      amount={item.amount}
-                      size="sm"
-                      color={item.type === 'expense' ? 'negative' : 'positive'}
-                    />
+                    <MoneyDisplay amount={item.amount} size="sm" color={item.type === 'expense' ? 'negative' : 'positive'} />
                   </div>
                 </div>
-              ))
-            )}
-          </Card>
-        </div>
+              ))}
+            </div>
+          )}
+        </Card>
 
-        <div className="dashboard-section">
+        <Card hover={false} className="dashboard-panel">
           <div className="section-header">
-            <h2 className="section-title">Metas de Ahorro</h2>
-            <Link to="/goals" className="section-link">
-              Ver todo <ArrowRight size={14} />
-            </Link>
+            <h2 className="section-title">Categorías</h2>
           </div>
-          <Card hover={false}>
-            {data.goals.length === 0 ? (
-              <EmptyState icon={PiggyBank} title="Sin metas" message="Crea tu primera meta de ahorro" action={{ label: 'Crear meta', onClick: () => navigate('/goals') }} />
-            ) : (
-              data.goals.slice(0, 3).map((goal) => (
-                <div key={goal.id} style={{ marginBottom: 'var(--space-4)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <span style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--color-text-primary)' }}>
-                      {goal.title}
-                    </span>
-                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
-                      {goal.progress_percentage ?? 0}%
-                    </span>
+          {categoryStats.length === 0 ? (
+            <EmptyState icon={BarChart3} title="Sin categorías todavía" message="Agrega movimientos para descubrir en qué gastas más." action={{ label: 'Agregar movimiento', onClick: () => navigate('/expenses/new') }} />
+          ) : (
+            <div className="category-list">
+              {categoryStats.slice(0, 5).map((category, index) => {
+                const percentage = Math.round(category.percentage_of_total ?? (topCategory?.total_amount ? (category.total_amount / topCategory.total_amount) * 100 : 0));
+                return (
+                  <div key={category.category_name} className="category-row">
+                    <div className="category-row__top">
+                      <span><span aria-hidden="true">{CATEGORY_ICONS[index % CATEGORY_ICONS.length]}</span> {category.category_name}</span>
+                      <span>{percentage}%</span>
+                    </div>
+                    <ProgressBar progress={percentage} height={8} />
                   </div>
-                  <ProgressBar progress={goal.progress_percentage ?? 0} />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+                );
+              })}
+            </div>
+          )}
+        </Card>
+
+        <Card hover={false} className="dashboard-panel">
+          <div className="section-header">
+            <h2 className="section-title">Metas de ahorro</h2>
+            <Link to="/goals" className="section-link">Ver todo <ArrowRight size={14} /></Link>
+          </div>
+          {data.goals.length === 0 ? (
+            <EmptyState icon={Target} title="Aún no tienes metas" message="Define una meta para mantener tu ahorro visible." action={{ label: 'Crear meta', onClick: () => navigate('/goals/new') }} />
+          ) : (
+            <div className="goals-list">
+              {data.goals.slice(0, 3).map((goal) => (
+                <div key={goal.id} className="goal-row">
+                  <div className="goal-row__header">
+                    <span>{goal.title}</span>
+                    <span>{Math.round(goal.progress_percentage ?? 0)}%</span>
+                  </div>
+                  <div className="goal-row__amounts">
                     <MoneyDisplay amount={goal.current_amount} size="sm" color="primary" />
-                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
-                      Meta: {formatCurrency(goal.target_amount)}
-                    </span>
+                    <span>/ {formatCurrency(goal.target_amount)}</span>
                   </div>
+                  <ProgressBar progress={goal.progress_percentage ?? 0} height={8} />
                 </div>
-              ))
-            )}
-          </Card>
-        </div>
+              ))}
+            </div>
+          )}
+        </Card>
       </div>
+
+      <Card hover={false} className="dashboard-insights">
+        <div className="dashboard-insights__icon"><Lightbulb size={20} /></div>
+        <div>
+          <h2 className="section-title">Insights financieros</h2>
+          <div className="insight-list">
+            {insights.map((insight) => <p key={insight}>💡 {insight}</p>)}
+          </div>
+        </div>
+      </Card>
     </div>
   );
 }

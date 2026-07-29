@@ -1,9 +1,12 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { Search, ChevronDown, Plus, TrendingDown, TrendingUp, List } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  ArrowDownUp, ChevronDown, Copy, Edit2, FileText, Plus, Search,
+  SlidersHorizontal, Trash2, TrendingDown, TrendingUp,
+} from 'lucide-react';
 import { expensesApi, incomesApi } from '@/services/api';
-import { Card } from '@/shared/components/Card';
+import { Card, CardGrid } from '@/shared/components/Card';
 import { MoneyDisplay } from '@/shared/components/MoneyDisplay';
 import { EmptyState } from '@/shared/components/EmptyState';
 import { ErrorState } from '@/shared/components/ErrorState';
@@ -13,6 +16,7 @@ import { formatRelative } from '@/shared/utils/format';
 import type { Expense, Income } from '@/types/api';
 
 type FilterType = 'all' | 'expense' | 'income';
+type SortType = 'newest' | 'oldest';
 
 type ActivityItem = {
   id: string;
@@ -20,6 +24,7 @@ type ActivityItem = {
   description: string;
   amount: number;
   date: string;
+  category: string;
 };
 
 const FILTERS: { key: FilterType; label: string }[] = [
@@ -28,9 +33,34 @@ const FILTERS: { key: FilterType; label: string }[] = [
   { key: 'expense', label: 'Gastos' },
 ];
 
+function getMovementIcon(item: ActivityItem) {
+  if (item._type === 'income') return '💼';
+  const text = item.description.toLowerCase();
+  if (text.includes('comida') || text.includes('pan') || text.includes('restaurant')) return '🍔';
+  if (text.includes('mercado') || text.includes('super') || text.includes('walmart')) return '🛒';
+  if (text.includes('transporte') || text.includes('uber') || text.includes('taxi')) return '🚗';
+  if (text.includes('casa') || text.includes('arriendo') || text.includes('hogar')) return '🏠';
+  return '💳';
+}
+
+function getGroupLabel(dateValue: string) {
+  const date = new Date(dateValue);
+  const today = new Date();
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const startOfDate = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const dayDiff = Math.floor((startOfToday - startOfDate) / 86_400_000);
+
+  if (dayDiff === 0) return 'Hoy';
+  if (dayDiff === 1) return 'Ayer';
+  if (dayDiff < 7) return 'Esta semana';
+  return date.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
+}
+
 export default function ActivityPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [filter, setFilter] = useState<FilterType>('all');
+  const [sort, setSort] = useState<SortType>('newest');
   const [search, setSearch] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -67,6 +97,26 @@ export default function ActivityPage() {
     initialPageParam: 1,
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (item: ActivityItem) => item._type === 'expense' ? expensesApi.remove(item.id) : incomesApi.remove(item.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['incomes'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    },
+  });
+
+  const duplicateMutation = useMutation<Expense | Income, Error, ActivityItem>({
+    mutationFn: (item: ActivityItem) => item._type === 'expense'
+      ? expensesApi.create({ amount: item.amount, description: `${item.description} copia`, expense_date: new Date().toISOString().split('T')[0] })
+      : incomesApi.create({ amount: item.amount, description: `${item.description} copia`, income_date: new Date().toISOString().split('T')[0] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['incomes'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    },
+  });
+
   const allItems = useMemo(() => {
     const expenses: ActivityItem[] = (expensesQuery.data?.pages.flatMap(p => p.data) ?? []).map((e: Expense) => ({
       id: e.id,
@@ -74,6 +124,7 @@ export default function ActivityPage() {
       description: e.description,
       amount: e.amount,
       date: e.expense_date,
+      category: 'Gasto',
     }));
     const incomes: ActivityItem[] = (incomesQuery.data?.pages.flatMap(p => p.data) ?? []).map((i: Income) => ({
       id: i.id,
@@ -81,23 +132,38 @@ export default function ActivityPage() {
       description: i.description,
       amount: i.amount,
       date: i.income_date,
+      category: 'Ingreso',
     }));
-    const combined = [...expenses, ...incomes];
-    combined.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    return combined;
+    return [...expenses, ...incomes];
   }, [expensesQuery.data, incomesQuery.data]);
+
+  const summary = useMemo(() => ({
+    movements: allItems.length,
+    income: allItems.filter(i => i._type === 'income').reduce((acc, item) => acc + item.amount, 0),
+    expense: allItems.filter(i => i._type === 'expense').reduce((acc, item) => acc + item.amount, 0),
+  }), [allItems]);
 
   const filtered = useMemo(() => {
     let items = allItems;
-    if (filter !== 'all') {
-      items = items.filter(i => i._type === filter);
-    }
+    if (filter !== 'all') items = items.filter(i => i._type === filter);
     if (search) {
       const q = search.toLowerCase();
-      items = items.filter(i => i.description.toLowerCase().includes(q));
+      items = items.filter(i => i.description.toLowerCase().includes(q) || i.category.toLowerCase().includes(q));
     }
-    return items;
-  }, [allItems, filter, search]);
+
+    return [...items].sort((a, b) => {
+      const diff = new Date(b.date).getTime() - new Date(a.date).getTime();
+      return sort === 'newest' ? diff : -diff;
+    });
+  }, [allItems, filter, search, sort]);
+
+  const grouped = useMemo(() => {
+    return filtered.reduce<Record<string, ActivityItem[]>>((groups, item) => {
+      const label = getGroupLabel(item.date);
+      groups[label] = groups[label] ? [...groups[label], item] : [item];
+      return groups;
+    }, {});
+  }, [filtered]);
 
   const isLoading = expensesQuery.isLoading || incomesQuery.isLoading;
   const isError = expensesQuery.isError || incomesQuery.isError;
@@ -107,6 +173,10 @@ export default function ActivityPage() {
   const handleLoadMore = () => {
     if (expensesQuery.hasNextPage) expensesQuery.fetchNextPage();
     if (incomesQuery.hasNextPage) incomesQuery.fetchNextPage();
+  };
+
+  const handleDelete = (item: ActivityItem) => {
+    if (window.confirm('¿Eliminar este movimiento?')) deleteMutation.mutate(item);
   };
 
   if (isLoading) {
@@ -121,91 +191,123 @@ export default function ActivityPage() {
   if (isError) return <ErrorState onRetry={() => { expensesQuery.refetch(); incomesQuery.refetch(); }} />;
 
   return (
-    <div>
-      <div className="dashboard-header">
-        <h1>Actividad</h1>
-        <div ref={menuRef} style={{ position: 'relative' }}>
-          <button className="btn btn--primary btn--sm" onClick={() => setMenuOpen(!menuOpen)}>
-            <Plus size={14} /> Nuevo
+    <div className="activity-screen">
+      <div className="activity-header">
+        <div>
+          <h1>Actividad</h1>
+          <p>Consulta y administra todos tus movimientos financieros.</p>
+        </div>
+        <div ref={menuRef} className="activity-new-menu">
+          <button className="btn btn--primary" type="button" onClick={() => setMenuOpen(!menuOpen)}>
+            <Plus size={18} /> Nuevo movimiento
           </button>
           {menuOpen && (
             <div className="dropdown-menu">
               <button className="dropdown-item" onClick={() => { setMenuOpen(false); navigate('/expenses/new'); }}>
-                <TrendingDown size={16} /> Nuevo Gasto
+                <TrendingDown size={16} /> Nuevo gasto
               </button>
               <button className="dropdown-item" onClick={() => { setMenuOpen(false); navigate('/incomes/new'); }}>
-                <TrendingUp size={16} /> Nuevo Ingreso
+                <TrendingUp size={16} /> Nuevo ingreso
               </button>
             </div>
           )}
         </div>
       </div>
 
-      <div className="filter-tabs">
-        {FILTERS.map(f => (
-          <button
-            key={f.key}
-            className={`filter-tab ${filter === f.key ? 'filter-tab--active' : ''}`}
-            onClick={() => setFilter(f.key)}
-          >
-            {f.label}
-          </button>
-        ))}
-        <div className="filter-tabs__search">
-          <Search size={14} />
+      <CardGrid columns={3}>
+        <Card className="activity-summary-card">
+          <span>Movimientos</span>
+          <strong>{summary.movements}</strong>
+        </Card>
+        <Card className="activity-summary-card">
+          <span>Ingresos</span>
+          <MoneyDisplay amount={summary.income} size="lg" color="positive" />
+        </Card>
+        <Card className="activity-summary-card">
+          <span>Gastos</span>
+          <MoneyDisplay amount={summary.expense} size="lg" color="negative" />
+        </Card>
+      </CardGrid>
+
+      <Card hover={false} className="activity-toolbar">
+        <div className="activity-filter-chips" aria-label="Filtros de movimientos">
+          {FILTERS.map(f => (
+            <button
+              key={f.key}
+              className={`activity-chip ${filter === f.key ? 'activity-chip--active' : ''}`}
+              type="button"
+              onClick={() => setFilter(f.key)}
+            >
+              {f.label}{f.key === 'all' && <ChevronDown size={14} />}
+            </button>
+          ))}
+        </div>
+        <label className="activity-search">
+          <Search size={16} />
           <input
             type="text"
-            placeholder="Buscar..."
+            placeholder="Buscar movimientos..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+        </label>
+        <div className="activity-toolbar__actions">
+          <button className="activity-tool-btn" type="button" onClick={() => setSort(sort === 'newest' ? 'oldest' : 'newest')}>
+            <ArrowDownUp size={16} /> {sort === 'newest' ? 'Más recientes' : 'Más antiguos'} <ChevronDown size={14} />
+          </button>
+          <button className="activity-tool-btn" type="button" onClick={() => { setFilter('all'); setSearch(''); }}>
+            <SlidersHorizontal size={16} /> Filtrar <ChevronDown size={14} />
+          </button>
         </div>
-      </div>
+      </Card>
 
       {filtered.length === 0 ? (
-        <EmptyState
-          icon={List}
-          title={search ? 'Sin resultados' : 'Sin actividad'}
-          message={search ? 'Prueba con otros términos' : 'No hay transacciones registradas aún'}
-          action={search ? undefined : { label: 'Nuevo Gasto', onClick: () => navigate('/expenses/new') }}
-        />
+        <Card hover={false} className="activity-empty-card">
+          <EmptyState
+            icon={FileText}
+            title={search ? 'Sin resultados' : 'Todavía no tienes movimientos registrados'}
+            message={search ? 'Prueba con otro término o limpia los filtros.' : 'Comienza agregando tu primer ingreso o gasto.'}
+            action={search ? { label: 'Limpiar búsqueda', onClick: () => setSearch('') } : { label: 'Agregar movimiento', onClick: () => navigate('/expenses/new') }}
+          />
+        </Card>
       ) : (
-        <Card hover={false}>
-          {filtered.map((item) => (
-            <Link
-              key={`${item._type}-${item.id}`}
-              to={item._type === 'expense' ? `/expenses/${item.id}` : `/incomes/${item.id}`}
-              className="activity-item"
-            >
-              <div
-                className="activity-item__dot"
-                style={{ background: item._type === 'expense' ? 'var(--color-danger)' : 'var(--color-success)' }}
-              />
-              <div className="activity-item__info">
-                <div className="activity-item__title">{item.description}</div>
-                <div className="activity-item__date">{formatRelative(item.date)}</div>
-              </div>
-              <div className="activity-item__amount">
-                <MoneyDisplay
-                  amount={item.amount}
-                  size="sm"
-                  color={item._type === 'expense' ? 'negative' : 'positive'}
-                />
-              </div>
-            </Link>
+        <div className="activity-groups">
+          {Object.entries(grouped).map(([label, items]) => (
+            <section key={label} className="activity-group">
+              <h2>{label}</h2>
+              <Card hover={false} className="activity-list-card">
+                {items.map((item) => (
+                  <div key={`${item._type}-${item.id}`} className="activity-row" onClick={() => navigate(item._type === 'expense' ? `/expenses/${item.id}` : `/incomes/${item.id}`)}>
+                    <div className="activity-row__icon" aria-hidden="true">{getMovementIcon(item)}</div>
+                    <div className="activity-row__main">
+                      <div className="activity-row__title">{item.description}</div>
+                      <div className="activity-row__meta">
+                        <span>{item.category}</span>
+                        <span>{formatRelative(item.date)}</span>
+                      </div>
+                    </div>
+                    <div className={`activity-row__indicator activity-row__indicator--${item._type}`} aria-hidden="true" />
+                    <div className="activity-row__amount">
+                      <MoneyDisplay amount={item.amount} size="md" color={item._type === 'expense' ? 'negative' : 'positive'} />
+                    </div>
+                    <div className="activity-row__actions" onClick={(event) => event.stopPropagation()}>
+                      <button type="button" title="Editar" onClick={() => navigate(item._type === 'expense' ? `/expenses/${item.id}/edit` : `/incomes/${item.id}/edit`)}><Edit2 size={14} /></button>
+                      <button type="button" title="Duplicar" onClick={() => duplicateMutation.mutate(item)}><Copy size={14} /></button>
+                      <button type="button" title="Eliminar" onClick={() => handleDelete(item)}><Trash2 size={14} /></button>
+                    </div>
+                  </div>
+                ))}
+              </Card>
+            </section>
           ))}
           {hasMore && (
-            <div style={{ textAlign: 'center', padding: 'var(--space-4)' }}>
-              <button
-                className="btn btn--ghost btn--sm"
-                onClick={handleLoadMore}
-                disabled={loadingMore}
-              >
+            <div className="activity-load-more">
+              <button className="btn btn--ghost btn--sm" type="button" onClick={handleLoadMore} disabled={loadingMore}>
                 {loadingMore ? <span className="btn__loader" /> : <><ChevronDown size={16} /> Cargar más</>}
               </button>
             </div>
           )}
-        </Card>
+        </div>
       )}
     </div>
   );
