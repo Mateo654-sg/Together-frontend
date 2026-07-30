@@ -10,6 +10,14 @@ import {
   Menu,
   X,
   LogOut,
+  Heart,
+  Wallet,
+  BellRing,
+  Tags,
+  Users,
+  DollarSign,
+  CalendarDays,
+  MessageCircle,
 } from 'lucide-react';
 import { useAuthStore } from '@/features/auth/store/auth-store';
 
@@ -17,6 +25,14 @@ const navItems = [
   { path: '/dashboard', label: 'Inicio', icon: LayoutDashboard },
   { path: '/activity', label: 'Actividad', icon: ArrowLeftRight },
   { path: '/goals', label: 'Metas', icon: Target },
+  { path: '/budgets', label: 'Presupuestos', icon: Wallet },
+  { path: '/couple', label: 'Pareja', icon: Heart },
+  { path: '/shared-finance', label: 'Shared Fin.', icon: Users },
+  { path: '/debts', label: 'Deudas', icon: DollarSign },
+  { path: '/calendar', label: 'Calendario', icon: CalendarDays },
+  { path: '/chat', label: 'Chat', icon: MessageCircle },
+  { path: '/reminders', label: 'Recordatorios', icon: BellRing },
+  { path: '/categories', label: 'Categorías', icon: Tags },
   { path: '/ai', label: 'IA', icon: Bot },
   { path: '/profile', label: 'Perfil', icon: User },
 ];

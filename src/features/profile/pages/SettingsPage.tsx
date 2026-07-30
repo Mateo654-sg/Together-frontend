@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/features/auth/store/auth-store';
 import { Card } from '@/shared/components/Card';
 import { ErrorState } from '@/shared/components/ErrorState';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Download, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { usersApi } from '@/services/api';
 
@@ -19,6 +19,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     usersApi.getSettings()
@@ -129,6 +130,52 @@ export default function SettingsPage() {
           </label>
         </div>
       </Card>
+
+      <div className="card" style={{ marginTop: 'var(--space-4)' }}>
+        <h3 style={{ marginBottom: 'var(--space-3)' }}>Datos</h3>
+        <button
+          className="btn btn--secondary"
+          onClick={async () => {
+            setExporting(true);
+            try {
+              const response = await fetch('/api/v1/users/export');
+              const blob = await response.blob();
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `together-data-${new Date().toISOString().split('T')[0]}.zip`;
+              a.click();
+              URL.revokeObjectURL(url);
+            } catch {
+              setError(true);
+            } finally {
+              setExporting(false);
+            }
+          }}
+          disabled={exporting}
+        >
+          <Download size={16} /> {exporting ? 'Exportando...' : 'Exportar mis datos'}
+        </button>
+
+        <hr style={{ margin: 'var(--space-4) 0', border: 'none', borderTop: '1px solid var(--color-border-subtle)' }} />
+
+        <h3 style={{ marginBottom: 'var(--space-3)', color: 'var(--color-danger)' }}>Zona de peligro</h3>
+        <button
+          className="btn btn--danger"
+          onClick={() => {
+            const password = prompt('Ingresa tu contraseña para confirmar la eliminación de tu cuenta:');
+            if (password) {
+              usersApi.deleteMe(password).then(() => {
+                window.location.href = '/login';
+              }).catch(() => {
+                setError(true);
+              });
+            }
+          }}
+        >
+          <Trash2 size={16} /> Eliminar mi cuenta
+        </button>
+      </div>
     </div>
   );
 }

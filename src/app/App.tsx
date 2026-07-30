@@ -3,7 +3,6 @@ import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Router } from '@/app/router';
-import { Toaster } from '@/shared/components/Toast';
 import { PageLoader } from '@/shared/components/PageLoader';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 import { setLogoutCallback } from '@/config/api';
@@ -47,7 +46,6 @@ export function App() {
             <Router />
           </ErrorBoundary>
         </AppInitializer>
-        <Toaster />
       </BrowserRouter>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>

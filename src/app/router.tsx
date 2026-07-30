@@ -18,6 +18,16 @@ const GoalDetailPage = lazy(() => import('@/features/goals/pages/GoalDetailPage'
 const GoalFormPage = lazy(() => import('@/features/goals/pages/GoalFormPage'));
 const ActivityPage = lazy(() => import('@/features/activity/pages/ActivityPage'));
 const AIPage = lazy(() => import('@/features/ai/pages/AIPage'));
+const CouplePage = lazy(() => import('@/features/couple/pages/CouplePage'));
+const BudgetsPage = lazy(() => import('@/features/budgets/pages/BudgetsPage'));
+const BudgetFormPage = lazy(() => import('@/features/budgets/pages/BudgetFormPage'));
+const RemindersPage = lazy(() => import('@/features/reminders/pages/RemindersPage'));
+const ReminderFormPage = lazy(() => import('@/features/reminders/pages/ReminderFormPage'));
+const CategoriesPage = lazy(() => import('@/features/categories/pages/CategoriesPage'));
+const SharedFinancePage = lazy(() => import('@/features/shared-finance/pages/SharedFinancePage'));
+const DebtsPage = lazy(() => import('@/features/debts/pages/DebtsPage'));
+const CalendarPage = lazy(() => import('@/features/calendar/pages/CalendarPage'));
+const ChatPage = lazy(() => import('@/features/chat/pages/ChatPage'));
 const ProfilePage = lazy(() => import('@/features/profile/pages/ProfilePage'));
 const NotificationsPage = lazy(() => import('@/features/notifications/pages/NotificationsPage'));
 const ReportsPage = lazy(() => import('@/features/reports/pages/ReportsPage'));
@@ -66,6 +76,18 @@ export function Router() {
           <Route path="/goals/:id" element={<SuspenseWrapper><GoalDetailPage /></SuspenseWrapper>} />
           <Route path="/activity" element={<SuspenseWrapper><ActivityPage /></SuspenseWrapper>} />
           <Route path="/ai" element={<SuspenseWrapper><AIPage /></SuspenseWrapper>} />
+          <Route path="/couple" element={<SuspenseWrapper><CouplePage /></SuspenseWrapper>} />
+          <Route path="/budgets" element={<SuspenseWrapper><BudgetsPage /></SuspenseWrapper>} />
+          <Route path="/budgets/new" element={<SuspenseWrapper><BudgetFormPage /></SuspenseWrapper>} />
+          <Route path="/budgets/:id/edit" element={<SuspenseWrapper><BudgetFormPage /></SuspenseWrapper>} />
+          <Route path="/reminders" element={<SuspenseWrapper><RemindersPage /></SuspenseWrapper>} />
+          <Route path="/reminders/new" element={<SuspenseWrapper><ReminderFormPage /></SuspenseWrapper>} />
+          <Route path="/reminders/:id/edit" element={<SuspenseWrapper><ReminderFormPage /></SuspenseWrapper>} />
+          <Route path="/categories" element={<SuspenseWrapper><CategoriesPage /></SuspenseWrapper>} />
+          <Route path="/shared-finance" element={<SuspenseWrapper><SharedFinancePage /></SuspenseWrapper>} />
+          <Route path="/debts" element={<SuspenseWrapper><DebtsPage /></SuspenseWrapper>} />
+          <Route path="/calendar" element={<SuspenseWrapper><CalendarPage /></SuspenseWrapper>} />
+          <Route path="/chat" element={<SuspenseWrapper><ChatPage /></SuspenseWrapper>} />
           <Route path="/profile" element={<SuspenseWrapper><ProfilePage /></SuspenseWrapper>} />
           <Route path="/notifications" element={<SuspenseWrapper><NotificationsPage /></SuspenseWrapper>} />
           <Route path="/reports" element={<SuspenseWrapper><ReportsPage /></SuspenseWrapper>} />

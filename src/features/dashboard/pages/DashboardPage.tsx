@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   ArrowRight, BarChart3, CalendarDays, Lightbulb, PiggyBank,
-  Plus, Target, TrendingDown, TrendingUp, Wallet,
+  Plus, Target, TrendingDown, TrendingUp, Wallet, Users,
 } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -17,6 +17,7 @@ import { EmptyState } from '@/shared/components/EmptyState';
 import { ErrorState } from '@/shared/components/ErrorState';
 import { useAuthStore } from '@/features/auth/store/auth-store';
 import { formatRelative, formatCurrency, toFiniteNumber } from '@/shared/utils/format';
+import { couplesApi } from '@/services/api';
 
 const CATEGORY_ICONS = ['🍔', '🚗', '🏠', '🛒', '💳'];
 
@@ -58,6 +59,11 @@ export default function DashboardPage() {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['dashboard'],
     queryFn: () => dashboardApi.get(),
+  });
+
+  const { data: couple } = useQuery({
+    queryKey: ['couple-status'],
+    queryFn: () => couplesApi.getStatus(),
   });
 
   useEffect(() => {
@@ -188,6 +194,23 @@ export default function DashboardPage() {
           );
         })}
       </CardGrid>
+
+      {couple?.status === 'accepted' && couple?.partner && (
+        <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
+          <Link to="/shared-finance" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', textDecoration: 'none', color: 'inherit' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+              <div style={{ width: 40, height: 40, borderRadius: 'var(--radius-lg)', background: 'var(--color-bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Users size={20} style={{ color: 'var(--color-brand-500)' }} />
+              </div>
+              <div>
+                <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>Saldo compartido con {couple.partner.first_name}</p>
+                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>Ver finanzas compartidas</p>
+              </div>
+            </div>
+            <ArrowRight size={16} style={{ color: 'var(--color-text-muted)' }} />
+          </Link>
+        </div>
+      )}
 
       <div className="dashboard-main-grid">
         <Card hover={false} className="dashboard-panel dashboard-panel--chart">
