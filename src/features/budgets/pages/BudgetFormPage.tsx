@@ -81,7 +81,7 @@ export default function BudgetFormPage() {
             <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
               <option value="">General</option>
               {(categories || []).map((c: Category) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
+                <option key={c.id} value={c.id}>{c.icon ? `${c.icon} ` : ''}{c.name}</option>
               ))}
             </select>
           </div>

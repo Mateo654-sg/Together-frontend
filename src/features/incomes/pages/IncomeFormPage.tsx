@@ -103,8 +103,8 @@ export default function IncomeFormPage() {
           <label className="form-label">Categoría</label>
           <select className="form-input" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
             <option value="">Sin categoría</option>
-            {categories?.map((c: { id: string; name: string }) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
+            {categories?.map((c: { id: string; name: string; icon: string | null }) => (
+              <option key={c.id} value={c.id}>{c.icon ? `${c.icon} ` : ''}{c.name}</option>
             ))}
           </select>
         </div>

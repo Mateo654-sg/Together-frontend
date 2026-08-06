@@ -130,13 +130,13 @@ export interface GoalStatistics {
 
 // ─── Budgets ────────────────────────────────────────────────
 export interface Budget {
-  id: string; user_id: string; category_id: string | null; amount: number;
+  id: string; user_id: string; category_id: string | null; category_name: string | null; amount: number;
   spent: number; month: number; year: number;
   percentage_consumed: number | null; created_at: string; updated_at: string;
 }
 export interface CreateBudgetInput { category_id?: string; amount: number; month: number; year: number; }
 export interface BudgetAlert {
-  budget_id: string; category_id: string | null; amount: number;
+  budget_id: string; category_id: string | null; category_name: string | null; amount: number;
   spent: number; percentage: number; level: string; month: number; year: number;
 }
 

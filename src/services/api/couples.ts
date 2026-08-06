@@ -20,4 +20,8 @@ export const couplesApi = {
   async unlink(): Promise<void> {
     await apiClient.delete('/couples/unlink');
   },
+  async cancel(): Promise<CoupleStatusResponse> {
+    const response = await apiClient.post<CoupleStatusResponse>('/couples/cancel');
+    return response.data;
+  },
 };

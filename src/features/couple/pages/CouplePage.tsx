@@ -44,11 +44,16 @@ export default function CouplePage() {
     },
   });
 
-  const rejectMutation = useMutation({
-    mutationFn: () => couplesApi.reject(''),
+  const cancelMutation = useMutation({
+    mutationFn: () => couplesApi.cancel(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['couple-status'] });
-      toast('info', 'Invitación rechazada');
+      setInviteCode('');
+      setShowAccept(false);
+      toast('info', 'Invitación cancelada');
+    },
+    onError: () => {
+      toast('error', 'No se pudo cancelar la invitación');
     },
   });
 
@@ -185,9 +190,10 @@ export default function CouplePage() {
               <div style={{ marginTop: 'var(--space-4)' }}>
                 <button
                   className="btn btn--danger btn--sm"
-                  onClick={() => { if (window.confirm('¿Cancelar la invitación?')) rejectMutation.mutate(); }}
+                  onClick={() => { if (window.confirm('¿Cancelar la invitación?')) cancelMutation.mutate(); }}
+                  disabled={cancelMutation.isPending}
                 >
-                  Cancelar invitación
+                  {cancelMutation.isPending ? 'Cancelando...' : 'Cancelar invitación'}
                 </button>
               </div>
             </div>

@@ -126,7 +126,7 @@ export default function BudgetsPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--space-3)' }}>
                   <div>
                     <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 600 }}>
-                      {budget.category_id || 'General'}
+                      {budget.category_name || 'General'}
                     </h3>
                     <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 'var(--space-1)' }}>
                       {MONTHS[budget.month - 1]} {budget.year}

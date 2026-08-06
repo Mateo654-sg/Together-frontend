@@ -118,8 +118,8 @@ export default function GoalsPage() {
         </div>
       )}
 
-      <div className="goals-header">
-        <div>
+      <div className="dashboard-header">
+        <div className="dashboard-header__intro">
           <h1>Metas de ahorro</h1>
           <p>Administra y sigue el progreso de tus objetivos financieros.</p>
         </div>
