@@ -4,6 +4,11 @@ import { useAuthStore } from '@/features/auth/store/auth-store';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID;
 
+// GSI solo admite una inicialización global; el flag evita el warning
+// "google.accounts.id.initialize() is called multiple times" al remontar
+// la página de login.
+let gsiInitialized = false;
+
 export default function GoogleSignInButton() {
   const navigate = useNavigate();
   const { googleLogin } = useAuthStore();
@@ -13,18 +18,21 @@ export default function GoogleSignInButton() {
   useEffect(() => {
     if (!window.google?.accounts || !buttonRef.current) return;
 
-    window.google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: async (response: google.accounts.id.CredentialResponse) => {
-        try {
-          await googleLogin(response.credential);
-          navigate('/dashboard');
-        } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : 'Error al iniciar sesión con Google';
-          setError(message);
-        }
-      },
-    });
+    if (!gsiInitialized) {
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: async (response: google.accounts.id.CredentialResponse) => {
+          try {
+            await googleLogin(response.credential);
+            navigate('/dashboard');
+          } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Error al iniciar sesión con Google';
+            setError(message);
+          }
+        },
+      });
+      gsiInitialized = true;
+    }
 
     window.google.accounts.id.renderButton(buttonRef.current, {
       type: 'standard',

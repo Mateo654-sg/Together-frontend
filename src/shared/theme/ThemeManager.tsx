@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { usersApi } from '@/services/api';
+import { useAuthStore } from '@/features/auth/store/auth-store';
 
 function applyTheme(theme: string) {
   const media = window.matchMedia('(prefers-color-scheme: light)');
@@ -8,7 +9,13 @@ function applyTheme(theme: string) {
 }
 
 export function ThemeManager() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
   useEffect(() => {
+    // Sin sesión no hay tema de usuario que consultar; se conserva el del CSS
+    // y se evita un 401 en /users/settings (y el refresh redundante del interceptor).
+    if (!isAuthenticated) return;
+
     let unsub: (() => void) | null = null;
     usersApi.getSettings()
       .then((settings) => {
@@ -22,10 +29,10 @@ export function ThemeManager() {
         }
       })
       .catch(() => {
-        // Sin autenticar: se conserva el tema por defecto del CSS.
+        // Fallo al leer el tema: se conserva el tema por defecto del CSS.
       });
     return () => unsub?.();
-  }, []);
+  }, [isAuthenticated]);
 
   return null;
 }
