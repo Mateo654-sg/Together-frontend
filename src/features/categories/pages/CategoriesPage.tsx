@@ -1,18 +1,96 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit3, Trash2, Tag, ArrowLeft, Save } from 'lucide-react';
+import {
+  Plus, Edit3, Trash2, Tag, ArrowLeft, Save,
+  Utensils, Coffee, ShoppingCart, Car, Home, Zap, Wifi, Droplets,
+  HeartPulse, Stethoscope, Dumbbell, Shirt, Scissors, GraduationCap,
+  Clapperboard, Music, Tv, Gamepad2, Plane, PawPrint, PiggyBank,
+  Banknote, Briefcase, Receipt, Gift, Smartphone, CreditCard,
+  Beer, BottleWine, Cake, Salad, Apple, Pizza, Building2, Bus,
+  Train, Landmark, Phone, Sparkles, ShoppingBasket, BookOpen, Lightbulb,
+  Baby, Monitor, Laptop, Headphones, Hammer,
+  type LucideIcon,
+} from 'lucide-react';
 import { categoriesApi } from '@/services/api';
 import { Card } from '@/shared/components/Card';
+import { FilterToolbar } from '@/shared/components/FilterToolbar';
 import { SkeletonCard } from '@/shared/components/Skeleton';
 import { ErrorState } from '@/shared/components/ErrorState';
 import { EmptyState } from '@/shared/components/EmptyState';
 import { useToast } from '@/shared/components/Toast';
 import type { Category, CreateCategoryInput } from '@/types/api';
 
+type TypeFilter = 'all' | 'expense' | 'income';
+
+const EMOJI_ICONS: Record<string, LucideIcon> = {
+  '🛒': ShoppingCart, '🛍': ShoppingBasket, '🍔': Utensils, '🍕': Pizza, '☕': Coffee,
+  '🍺': Beer, '🍷': BottleWine, '🍰': Cake, '🍦': Cake, '🚗': Car, '🏠': Home,
+  '💰': Banknote, '🏦': Landmark, '💳': CreditCard, '💊': HeartPulse, '🏥': Stethoscope,
+  '🎓': GraduationCap, '📚': BookOpen, '✈': Plane, '🎬': Clapperboard, '🎵': Music,
+  '📺': Tv, '👕': Shirt, '✂': Scissors, '🎁': Gift, '🐶': PawPrint, '🐱': PawPrint,
+  '🏋': Dumbbell, '⚽': Dumbbell, '💪': Dumbbell, '📱': Smartphone, '💻': Laptop,
+  '📞': Phone, '🔌': Wifi, '💡': Lightbulb, '🔥': Sparkles, '🎉': Sparkles,
+  '🌮': Utensils, '🍜': Utensils, '🥗': Salad, '🍎': Apple, '🧾': Receipt,
+  '💸': Banknote, '🏢': Building2, '👶': Baby, '💇': Scissors, '🚌': Bus, '🚇': Train,
+  '🌍': Plane, '🖥': Monitor, '🎧': Headphones, '🔧': Hammer, '💼': Briefcase,
+};
+
+const CATEGORY_ICON_RULES: { keywords: string[]; icon: LucideIcon }[] = [
+  { keywords: ['postre', 'dulce', 'helado', 'pastel', 'torta', 'chocolate'], icon: Cake },
+  { keywords: ['cerveza', 'licor', 'vino', 'bar', 'fiesta'], icon: Beer },
+  { keywords: ['café', 'cafe', 'desayuno rápido'], icon: Coffee },
+  { keywords: ['pizza', 'hamburguesa', 'fast food', 'comida rápida'], icon: Pizza },
+  { keywords: ['fruta', 'verdura', 'verduras', 'vegetal', 'saludable', 'ensalada'], icon: Salad },
+  { keywords: ['comida', 'restaurante', 'cena', 'almuerzo', 'desayuno', 'menú', 'menu', 'delivery', 'superman', 'almuerzos'], icon: Utensils },
+  { keywords: ['mercado', 'supermercado', 'super', 'despensa', 'alimentos', 'víveres', 'viveres', 'abarrote', 'mandado'], icon: ShoppingCart },
+  { keywords: ['internet', 'wifi', 'streaming', 'suscripción', 'suscripcion', 'netflix', 'spotify'], icon: Wifi },
+  { keywords: ['agua', 'acueducto', 'alcantarillado'], icon: Droplets },
+  { keywords: ['luz', 'electricidad', 'energía', 'energia', 'servicios públicos', 'servicios publicos'], icon: Zap },
+  { keywords: ['tarjeta', 'crédito', 'credito', 'préstamo', 'prestamo', 'deuda', 'financiación', 'financiacion'], icon: CreditCard },
+  { keywords: ['transporte', 'uber', 'taxi', 'gasolina', 'combustible', 'parqueadero', 'estacionamiento', 'peaje', 'bus', 'metro', 'buseta', 'carro', 'auto', 'vehículo', 'vehiculo', 'moto', 'bicicleta', 'gas'], icon: Car },
+  { keywords: ['gimnasio', 'deporte', 'entrenamiento', 'fitness', 'crossfit', 'yoga'], icon: Dumbbell },
+  { keywords: ['salud', 'médico', 'medico', 'doctor', 'farmacia', 'medicina', 'medicamento', 'hospital', 'clínica', 'clinica', 'dental', 'seguro médico', 'seguro medico', 'psicolog'], icon: HeartPulse },
+  { keywords: ['ropa', 'zapatos', 'vestido', 'jeans', 'camisa', 'moda', 'outfit', 'prendas'], icon: Shirt },
+  { keywords: ['pelo', 'peluquería', 'peluqueria', 'belleza', 'cosmético', 'cosmetico', 'maquillaje', 'uñas', 'unas', 'barber'], icon: Scissors },
+  { keywords: ['educación', 'educacion', 'colegio', 'universidad', 'curso', 'matrícula', 'matricula', 'escuela', 'libros', 'estudio', 'academia'], icon: GraduationCap },
+  { keywords: ['cine', 'película', 'pelicula', 'concierto', 'evento', 'teatro', 'festival'], icon: Clapperboard },
+  { keywords: ['música', 'musica', 'concierto', 'instrumento'], icon: Music },
+  { keywords: ['juego', 'videojuego', 'gaming', 'consola', 'playstation', 'xbox', 'nintendo'], icon: Gamepad2 },
+  { keywords: ['viaje', 'vuelo', 'avión', 'avion', 'hotel', 'vacaciones', 'turismo', 'reserva', 'aeropuerto', 'tiquete', 'boleto'], icon: Plane },
+  { keywords: ['mascota', 'perro', 'gato', 'veterinaria', 'petshop', 'mascotas'], icon: PawPrint },
+  { keywords: ['ahorro', 'inversión', 'inversion', 'fondos', 'cuenta ahorro', 'finanzas'], icon: PiggyBank },
+  { keywords: ['salario', 'sueldo', 'nómina', 'nomina', 'bono', 'bonificación', 'bonificacion', 'quincena'], icon: Banknote },
+  { keywords: ['negocio', 'freelance', 'honorarios', 'trabajo', 'empresa', 'contrato'], icon: Briefcase },
+  { keywords: ['venta', 'ventas', 'ecommerce', 'tienda', 'marketplace'], icon: ShoppingBasket },
+  { keywords: ['impuesto', 'impuestos', 'iva', 'seguro'], icon: Receipt },
+  { keywords: ['regalo', 'cumpleaños', 'cumpleanos', 'detalle', 'obsequio', 'navidad', 'aniversario', 'san valentín', 'san valentin'], icon: Gift },
+  { keywords: ['tecnología', 'tecnologia', 'electrónica', 'electronica', 'computador', 'computador', 'laptop', 'celular', 'teléfono', 'telefono', 'gadget'], icon: Smartphone },
+  { keywords: ['arriendo', 'alquiler', 'renta', 'casa', 'hogar', 'vivienda', 'apartamento', 'hipoteca', 'condominio'], icon: Home },
+  { keywords: ['oficina', 'trabajo', 'oficinas'], icon: Building2 },
+  { keywords: ['estudio', 'cursos'], icon: BookOpen },
+];
+
+function normalizeEmoji(emoji: string): string {
+  return (emoji || '').replace(/[\uFE0F\u200D]/g, '').trim();
+}
+
+function getCategoryIcon(category: Category): LucideIcon {
+  const fromEmoji = EMOJI_ICONS[normalizeEmoji(category.icon || '')];
+  if (fromEmoji) return fromEmoji;
+
+  const name = (category.name || '').toLowerCase();
+  for (const rule of CATEGORY_ICON_RULES) {
+    if (rule.keywords.some((k) => name.includes(k))) return rule.icon;
+  }
+  return Tag;
+}
+
 export default function CategoriesPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [typeFilter, setTypeFilter] = useState<string | undefined>(undefined);
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
+  const [search, setSearch] = useState('');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
   const [name, setName] = useState('');
@@ -22,10 +100,20 @@ export default function CategoriesPage() {
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['categories', typeFilter],
-    queryFn: () => categoriesApi.getAll(typeFilter as 'expense' | 'income' | undefined),
+    queryFn: () => categoriesApi.getAll(typeFilter === 'all' ? undefined : typeFilter),
   });
 
-  const categories = data || [];
+  const filteredCategories = useMemo(() => {
+    const base = data || [];
+    const q = search.trim().toLowerCase();
+    const filtered = q
+      ? base.filter((cat) => cat.name.toLowerCase().includes(q))
+      : base;
+    return [...filtered].sort((a, b) => {
+      const cmp = a.name.localeCompare(b.name, 'es', { sensitivity: 'base' });
+      return sortOrder === 'asc' ? cmp : -cmp;
+    });
+  }, [data, search, sortOrder]);
 
   const resetForm = () => {
     setName(''); setType('expense'); setIcon(''); setColor('#6366f1');
@@ -76,11 +164,22 @@ export default function CategoriesPage() {
         </button>
       </div>
 
-      <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-6)' }}>
-        <button className={`chip ${typeFilter === undefined ? 'chip--active' : ''}`} onClick={() => setTypeFilter(undefined)}>Todas</button>
-        <button className={`chip ${typeFilter === 'expense' ? 'chip--active' : ''}`} onClick={() => setTypeFilter('expense')}>Gastos</button>
-        <button className={`chip ${typeFilter === 'income' ? 'chip--active' : ''}`} onClick={() => setTypeFilter('income')}>Ingresos</button>
-      </div>
+      <FilterToolbar
+        filters={[
+          { key: 'all', label: 'Todas', showChevron: true },
+          { key: 'income', label: 'Ingresos' },
+          { key: 'expense', label: 'Gastos' },
+        ]}
+        activeFilter={typeFilter}
+        onFilterChange={(key) => setTypeFilter(key as TypeFilter)}
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Buscar categorías..."
+        ariaLabel="Filtros de categorías"
+        sortLabel={sortOrder === 'asc' ? 'A–Z' : 'Z–A'}
+        onSortClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+        onFilterClick={() => { setTypeFilter('all'); setSearch(''); }}
+      />
 
       {showForm && (
         <div className="card" style={{ marginBottom: 'var(--space-6)', maxWidth: 640 }}>
@@ -121,44 +220,52 @@ export default function CategoriesPage() {
         <SkeletonCard count={3} />
       ) : isError ? (
         <ErrorState onRetry={refetch} />
-      ) : categories.length === 0 ? (
-        <EmptyState icon={Tag} title="Sin categorías" message="Crea categorías para organizar tus transacciones." />
+      ) : filteredCategories.length === 0 ? (
+        <EmptyState
+          icon={Tag}
+          title={search ? 'Sin resultados' : 'Sin categorías'}
+          message={search ? 'Prueba con otro término o limpia la búsqueda.' : 'Crea categorías para organizar tus transacciones.'}
+          action={search ? { label: 'Limpiar búsqueda', onClick: () => setSearch('') } : undefined}
+        />
       ) : (
         <div className="goals-grid">
-          {categories.map((cat: Category) => (
-            <Card key={cat.id} hover={false}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-                <div style={{
-                  width: 44, height: 44, borderRadius: 'var(--radius-lg)',
-                  background: cat.color || 'var(--color-bg-elevated)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 'var(--text-lg)', flexShrink: 0,
-                  color: 'white',
-                }}>
-                  {cat.icon || <Tag size={18} />}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 600 }}>{cat.name}</h3>
-                  <span style={{
-                    padding: '1px var(--space-2)', borderRadius: 'var(--radius-full)',
-                    fontSize: 'var(--text-xs)', fontWeight: 600,
-                    background: cat.type === 'expense' ? 'var(--color-danger-dim)' : 'var(--color-success-dim)',
-                    color: cat.type === 'expense' ? 'var(--color-danger)' : 'var(--color-success)',
+          {filteredCategories.map((cat: Category) => {
+            const CategoryIcon = getCategoryIcon(cat);
+            return (
+              <Card key={cat.id} hover={false}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                  <div style={{
+                    width: 44, height: 44, borderRadius: 'var(--radius-lg)',
+                    background: cat.color || 'var(--color-bg-elevated)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0,
+                    color: 'white',
                   }}>
-                    {cat.type === 'expense' ? 'Gasto' : 'Ingreso'}
-                  </span>
+                    <CategoryIcon size={20} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 600 }}>{cat.name}</h3>
+                    <span style={{
+                      padding: '1px var(--space-2)', borderRadius: 'var(--radius-full)',
+                      fontSize: 'var(--text-xs)', fontWeight: 600,
+                      background: cat.type === 'expense' ? 'var(--color-danger-dim)' : 'var(--color-success-dim)',
+                      color: cat.type === 'expense' ? 'var(--color-danger)' : 'var(--color-success)',
+                    }}>
+                      {cat.type === 'expense' ? 'Gasto' : 'Ingreso'}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 'var(--space-1)' }}>
+                    <button className="btn btn--ghost btn--sm" onClick={() => editCategory(cat)}>
+                      <Edit3 size={14} />
+                    </button>
+                    <button className="btn btn--ghost btn--sm" onClick={() => { if (window.confirm('¿Eliminar esta categoría?')) deleteMutation.mutate(cat.id); }}>
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', gap: 'var(--space-1)' }}>
-                  <button className="btn btn--ghost btn--sm" onClick={() => editCategory(cat)}>
-                    <Edit3 size={14} />
-                  </button>
-                  <button className="btn btn--ghost btn--sm" onClick={() => { if (window.confirm('¿Eliminar esta categoría?')) deleteMutation.mutate(cat.id); }}>
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>

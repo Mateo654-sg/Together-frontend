@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Bell, CheckCircle, Circle, Trash2, Edit3, Clock } from 'lucide-react';
 import { remindersApi } from '@/services/api';
 import { Card } from '@/shared/components/Card';
+import { FilterToolbar } from '@/shared/components/FilterToolbar';
 import { SkeletonCard } from '@/shared/components/Skeleton';
 import { ErrorState } from '@/shared/components/ErrorState';
 import { EmptyState } from '@/shared/components/EmptyState';
@@ -11,15 +12,19 @@ import { useToast } from '@/shared/components/Toast';
 import { MoneyDisplay } from '@/shared/components/MoneyDisplay';
 import type { Reminder } from '@/types/api';
 
+type ReminderFilter = 'pending' | 'completed';
+
 export default function RemindersPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [showCompleted, setShowCompleted] = useState(false);
+  const [filter, setFilter] = useState<ReminderFilter>('pending');
+  const [search, setSearch] = useState('');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['reminders', showCompleted],
-    queryFn: () => remindersApi.getAll({ completed: showCompleted ? undefined : false }),
+    queryKey: ['reminders', filter],
+    queryFn: () => remindersApi.getAll({ completed: filter === 'completed' }),
   });
 
   const completeMutation = useMutation({
@@ -38,7 +43,20 @@ export default function RemindersPage() {
     },
   });
 
-  const reminders = data?.data || [];
+  const filteredReminders = useMemo(() => {
+    const base = data?.data || [];
+    const q = search.trim().toLowerCase();
+    const list = q
+      ? base.filter((r) =>
+          r.title.toLowerCase().includes(q) ||
+          (r.description || '').toLowerCase().includes(q)
+        )
+      : base;
+    return [...list].sort((a, b) => {
+      const diff = new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
+      return sortOrder === 'asc' ? diff : -diff;
+    });
+  }, [data, search, sortOrder]);
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
@@ -58,35 +76,45 @@ export default function RemindersPage() {
         </button>
       </div>
 
-      <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-6)' }}>
-        <button
-          className={`chip ${!showCompleted ? 'chip--active' : ''}`}
-          onClick={() => setShowCompleted(false)}
-        >
-          Pendientes
-        </button>
-        <button
-          className={`chip ${showCompleted ? 'chip--active' : ''}`}
-          onClick={() => setShowCompleted(true)}
-        >
-          Completados
-        </button>
-      </div>
+      <FilterToolbar
+        filters={[
+          { key: 'pending', label: 'Pendientes' },
+          { key: 'completed', label: 'Completados' },
+        ]}
+        activeFilter={filter}
+        onFilterChange={(key) => setFilter(key as ReminderFilter)}
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Buscar recordatorios..."
+        ariaLabel="Filtros de recordatorios"
+        sortLabel={sortOrder === 'asc' ? 'Próxima fecha' : 'Fecha lejana'}
+        onSortClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+        onFilterClick={() => { setFilter('pending'); setSearch(''); }}
+      />
 
       {isLoading ? (
         <SkeletonCard count={3} />
       ) : isError ? (
         <ErrorState onRetry={refetch} />
-      ) : reminders.length === 0 ? (
-        <EmptyState
-          icon={Bell}
-          title={showCompleted ? 'Sin recordatorios completados' : 'Sin recordatorios pendientes'}
-          message={showCompleted ? '' : 'Crea recordatorios para no olvidar pagos importantes.'}
-          action={!showCompleted ? { label: 'Crear recordatorio', onClick: () => navigate('/reminders/new') } : undefined}
-        />
+      ) : filteredReminders.length === 0 ? (
+        search ? (
+          <EmptyState
+            icon={Bell}
+            title="Sin resultados"
+            message="Prueba con otro término o limpia la búsqueda."
+            action={{ label: 'Limpiar búsqueda', onClick: () => setSearch('') }}
+          />
+        ) : (
+          <EmptyState
+            icon={Bell}
+            title={filter === 'completed' ? 'Sin recordatorios completados' : 'Sin recordatorios pendientes'}
+            message={filter === 'pending' ? 'Crea recordatorios para no olvidar pagos importantes.' : ''}
+            action={filter === 'pending' ? { label: 'Crear recordatorio', onClick: () => navigate('/reminders/new') } : undefined}
+          />
+        )
       ) : (
         <div className="goals-grid">
-          {reminders.map((reminder: Reminder) => {
+          {filteredReminders.map((reminder: Reminder) => {
             const overdue = !reminder.is_completed && isOverdue(reminder.due_date);
             return (
               <Card key={reminder.id} hover={false}>

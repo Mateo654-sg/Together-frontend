@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Plus, Trash2, Users, DollarSign } from 'lucide-react';
+import { ArrowLeft, Plus, Search, Trash2, Users, DollarSign } from 'lucide-react';
 import { sharedExpensesApi, couplesApi } from '@/services/api';
 import { Card } from '@/shared/components/Card';
+import { FilterToolbar } from '@/shared/components/FilterToolbar';
 import { SkeletonCard } from '@/shared/components/Skeleton';
 import { ErrorState } from '@/shared/components/ErrorState';
 import { EmptyState } from '@/shared/components/EmptyState';
@@ -20,6 +21,8 @@ export default function SharedFinancePage() {
   const { toast } = useToast();
   const user = useAuthStore((s) => s.user);
   const [tab, setTab] = useState<Tab>('expenses');
+  const [search, setSearch] = useState('');
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [showForm, setShowForm] = useState(false);
   const [formType, setFormType] = useState<'expense' | 'income'>('expense');
   const [amount, setAmount] = useState('');
@@ -68,6 +71,30 @@ export default function SharedFinancePage() {
   const totalIncomes = incomes.reduce((sum: number, i: SharedIncome) => sum + i.amount, 0);
   const balance = totalIncomes - totalExpenses;
 
+  const filteredExpenses = useMemo(() => {
+    const base = expensesData?.data || [];
+    const q = search.trim().toLowerCase();
+    const list = q
+      ? base.filter((e) => e.description.toLowerCase().includes(q))
+      : base;
+    return [...list].sort((a, b) => {
+      const diff = new Date(a.expense_date).getTime() - new Date(b.expense_date).getTime();
+      return sortOrder === 'desc' ? -diff : diff;
+    });
+  }, [expensesData, search, sortOrder]);
+
+  const filteredIncomes = useMemo(() => {
+    const base = incomesData?.data || [];
+    const q = search.trim().toLowerCase();
+    const list = q
+      ? base.filter((i) => i.description.toLowerCase().includes(q))
+      : base;
+    return [...list].sort((a, b) => {
+      const diff = new Date(a.income_date).getTime() - new Date(b.income_date).getTime();
+      return sortOrder === 'desc' ? -diff : diff;
+    });
+  }, [incomesData, search, sortOrder]);
+
   const isLinked = couple?.status === 'accepted';
 
   if (!isLinked) {
@@ -114,13 +141,22 @@ export default function SharedFinancePage() {
         </Card>
       </div>
 
-      <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-6)' }}>
-        {(['expenses', 'incomes', 'balance'] as Tab[]).map((t) => (
-          <button key={t} className={`chip ${tab === t ? 'chip--active' : ''}`} onClick={() => setTab(t)}>
-            {t === 'expenses' ? 'Gastos' : t === 'incomes' ? 'Ingresos' : 'Balance'}
-          </button>
-        ))}
-      </div>
+      <FilterToolbar
+        filters={[
+          { key: 'expenses', label: 'Gastos' },
+          { key: 'incomes', label: 'Ingresos' },
+          { key: 'balance', label: 'Balance' },
+        ]}
+        activeFilter={tab}
+        onFilterChange={(key) => setTab(key as Tab)}
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Buscar en finanzas compartidas..."
+        ariaLabel="Filtros de finanzas compartidas"
+        sortLabel={sortOrder === 'desc' ? 'Más recientes' : 'Más antiguos'}
+        onSortClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
+        onFilterClick={() => { setTab('expenses'); setSearch(''); }}
+      />
 
       {showForm && (
         <div className="card" style={{ marginBottom: 'var(--space-6)' }}>
@@ -166,9 +202,11 @@ export default function SharedFinancePage() {
         expError ? <ErrorState onRetry={expRefetch} /> :
         expenses.length === 0 ? (
           <EmptyState icon={Users} title="Sin gastos compartidos" message="Agrega gastos que ambos compartan." />
+        ) : filteredExpenses.length === 0 ? (
+          <EmptyState icon={Search} title="Sin resultados" message="Prueba con otro término o limpia la búsqueda." action={{ label: 'Limpiar búsqueda', onClick: () => setSearch('') }} />
         ) : (
           <div className="goals-grid">
-            {expenses.map((expense: SharedExpense) => (
+            {filteredExpenses.map((expense: SharedExpense) => (
               <Card key={expense.id} hover={false}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <div>
@@ -202,9 +240,11 @@ export default function SharedFinancePage() {
         incError ? <ErrorState onRetry={incRefetch} /> :
         incomes.length === 0 ? (
           <EmptyState icon={Users} title="Sin ingresos compartidos" message="Agrega ingresos compartidos." />
+        ) : filteredIncomes.length === 0 ? (
+          <EmptyState icon={Search} title="Sin resultados" message="Prueba con otro término o limpia la búsqueda." action={{ label: 'Limpiar búsqueda', onClick: () => setSearch('') }} />
         ) : (
           <div className="goals-grid">
-            {incomes.map((income: SharedIncome) => (
+            {filteredIncomes.map((income: SharedIncome) => (
               <Card key={income.id} hover={false}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <div>

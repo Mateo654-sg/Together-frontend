@@ -2,11 +2,12 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  ArrowDownUp, ChevronDown, Copy, Edit2, FileText, Plus, Search,
-  SlidersHorizontal, Trash2, TrendingDown, TrendingUp,
+  ChevronDown, Copy, Edit2, FileText, Plus,
+  Trash2, TrendingDown, TrendingUp,
 } from 'lucide-react';
 import { expensesApi, incomesApi } from '@/services/api';
 import { Card, CardGrid } from '@/shared/components/Card';
+import { FilterToolbar } from '@/shared/components/FilterToolbar';
 import { MoneyDisplay } from '@/shared/components/MoneyDisplay';
 import { EmptyState } from '@/shared/components/EmptyState';
 import { ErrorState } from '@/shared/components/ErrorState';
@@ -28,8 +29,8 @@ type ActivityItem = {
   category: string;
 };
 
-const FILTERS: { key: FilterType; label: string }[] = [
-  { key: 'all', label: 'Todos' },
+const FILTERS: { key: FilterType; label: string; showChevron?: boolean }[] = [
+  { key: 'all', label: 'Todos', showChevron: true },
   { key: 'income', label: 'Ingresos' },
   { key: 'expense', label: 'Gastos' },
 ];
@@ -235,37 +236,18 @@ export default function ActivityPage() {
         </Card>
       </CardGrid>
 
-      <Card hover={false} className="activity-toolbar">
-        <div className="activity-filter-chips" aria-label="Filtros de movimientos">
-          {FILTERS.map(f => (
-            <button
-              key={f.key}
-              className={`activity-chip ${filter === f.key ? 'activity-chip--active' : ''}`}
-              type="button"
-              onClick={() => setFilter(f.key)}
-            >
-              {f.label}{f.key === 'all' && <ChevronDown size={14} />}
-            </button>
-          ))}
-        </div>
-        <label className="activity-search">
-          <Search size={16} />
-          <input
-            type="text"
-            placeholder="Buscar movimientos..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </label>
-        <div className="activity-toolbar__actions">
-          <button className="activity-tool-btn" type="button" onClick={() => setSort(sort === 'newest' ? 'oldest' : 'newest')}>
-            <ArrowDownUp size={16} /> {sort === 'newest' ? 'Más recientes' : 'Más antiguos'} <ChevronDown size={14} />
-          </button>
-          <button className="activity-tool-btn" type="button" onClick={() => { setFilter('all'); setSearch(''); }}>
-            <SlidersHorizontal size={16} /> Filtrar <ChevronDown size={14} />
-          </button>
-        </div>
-      </Card>
+      <FilterToolbar
+        filters={FILTERS}
+        activeFilter={filter}
+        onFilterChange={(key) => setFilter(key as FilterType)}
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Buscar movimientos..."
+        ariaLabel="Filtros de movimientos"
+        sortLabel={sort === 'newest' ? 'Más recientes' : 'Más antiguos'}
+        onSortClick={() => setSort(sort === 'newest' ? 'oldest' : 'newest')}
+        onFilterClick={() => { setFilter('all'); setSearch(''); }}
+      />
 
       {filtered.length === 0 ? (
         <Card hover={false} className="activity-empty-card">
