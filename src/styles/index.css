@@ -633,7 +633,8 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .activity-summary-card span:first-child { color: var(--color-text-muted); font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
 .activity-summary-card strong { color: var(--color-text-primary); font-size: var(--text-2xl); line-height: 1; font-variant-numeric: tabular-nums; }
 
-.activity-toolbar { display: grid; grid-template-columns: auto minmax(220px, 1fr) auto; align-items: center; gap: var(--space-3); padding: var(--space-3); border-radius: var(--radius-xl); }
+.activity-toolbar { display: grid; grid-template-columns: auto minmax(220px, 1fr) auto; align-items: center; gap: var(--space-3); padding: var(--space-3); border-radius: var(--radius-xl); margin-bottom: var(--space-6); }
+.activity-screen .activity-toolbar { margin-bottom: 0; }
 .activity-filter-chips { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
 .activity-chip, .activity-tool-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
