@@ -25,6 +25,7 @@ import {
 import { useAuthStore } from '@/features/auth/store/auth-store';
 import { OfflineBanner } from '@/pwa/OfflineBanner';
 import { InstallButton } from '@/pwa/InstallButton';
+import { InstallPromptBanner } from '@/pwa/InstallPromptBanner';
 
 const navItems = [
   { path: '/dashboard', label: 'Inicio', icon: LayoutDashboard },
@@ -125,6 +126,8 @@ export function AppLayout() {
         </header>
 
         <OfflineBanner />
+
+        <InstallPromptBanner />
 
         {/* Page content */}
         <main className="main-content" id="main-content" tabIndex={-1}>
