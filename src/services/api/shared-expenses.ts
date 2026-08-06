@@ -25,8 +25,19 @@ export const sharedExpensesApi = {
     const response = await apiClient.get<PaginatedList<SharedIncome>>('/shared-incomes', { params });
     return response.data;
   },
+  async getByIdIncome(id: string): Promise<SharedIncome> {
+    const response = await apiClient.get<SharedIncome>(`/shared-incomes/${id}`);
+    return response.data;
+  },
   async createIncome(data: CreateSharedIncomeInput): Promise<SharedIncome> {
     const response = await apiClient.post<SharedIncome>('/shared-incomes', data);
     return response.data;
+  },
+  async updateIncome(id: string, data: Partial<CreateSharedIncomeInput>): Promise<SharedIncome> {
+    const response = await apiClient.put<SharedIncome>(`/shared-incomes/${id}`, data);
+    return response.data;
+  },
+  async removeIncome(id: string): Promise<void> {
+    await apiClient.delete(`/shared-incomes/${id}`);
   },
 };

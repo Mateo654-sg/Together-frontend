@@ -951,6 +951,18 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .contribution-modal__actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-5); }
 .form-error { color: hsl(0, 90%, 78%); font-size: var(--text-xs); font-weight: 600; margin-top: var(--space-2); }
 
+/* ── Generic Modal ─────────────────────────────────────────── */
+.modal-overlay { position: fixed; inset: 0; z-index: var(--z-modal); display: flex; align-items: flex-start; justify-content: center; padding: var(--space-6) var(--space-4); overflow-y: auto; background: rgba(0, 0, 0, 0.68); backdrop-filter: blur(8px); animation: fadeIn var(--transition-fast) both; }
+.modal { width: min(100%, 540px); margin: auto 0; border-radius: var(--radius-2xl); background: var(--gradient-card); border: 1px solid var(--color-border-default); box-shadow: var(--shadow-xl); animation: scaleIn var(--transition-base) both; }
+.modal--lg { width: min(100%, 700px); }
+.modal--sm { width: min(100%, 420px); }
+.modal__header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-5) var(--space-6); border-bottom: 1px solid var(--color-border-subtle); }
+.modal__title { margin: 0; font-size: var(--text-lg); font-weight: 750; }
+.modal__close { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-md); background: var(--color-bg-elevated); color: var(--color-text-muted); }
+.modal__close:hover { color: var(--color-text-primary); background: var(--color-bg-overlay); }
+.modal__body { padding: var(--space-6); max-height: 70vh; overflow-y: auto; }
+.modal__footer { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-4); }
+
 @media (max-width: 1180px) {
   .goals-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .goals-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -966,6 +978,8 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   .contribution-modal { padding: var(--space-5); }
   .contribution-modal__actions { flex-direction: column-reverse; }
   .contribution-modal__actions .btn { width: 100%; }
+  .modal__footer { flex-direction: column-reverse; }
+  .modal__footer .btn { width: 100%; }
   .goals-toast { left: var(--space-4); right: var(--space-4); top: var(--space-4); }
 }
 

@@ -1,101 +1,149 @@
 import { useMemo, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Plus, Search, Trash2, Users, DollarSign } from 'lucide-react';
-import { sharedExpensesApi, couplesApi } from '@/services/api';
-import { Card } from '@/shared/components/Card';
-import { FilterToolbar } from '@/shared/components/FilterToolbar';
-import { SkeletonCard } from '@/shared/components/Skeleton';
-import { ErrorState } from '@/shared/components/ErrorState';
-import { EmptyState } from '@/shared/components/EmptyState';
-import { useToast } from '@/shared/components/Toast';
-import { MoneyDisplay } from '@/shared/components/MoneyDisplay';
 import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '@/features/auth/store/auth-store';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Users } from 'lucide-react';
+import { sharedExpensesApi, couplesApi } from '@/services/api';
+import { Card, CardGrid } from '@/shared/components/Card';
+import { FilterToolbar } from '@/shared/components/FilterToolbar';
+import { MoneyDisplay } from '@/shared/components/MoneyDisplay';
+import { EmptyState } from '@/shared/components/EmptyState';
+import { ErrorState } from '@/shared/components/ErrorState';
+import { SkeletonCard } from '@/shared/components/Skeleton';
+import { ActivityList } from '@/shared/components/ActivityList';
+import { NewMovementButton } from '@/shared/components/NewMovementButton';
+import { ExpenseFormModal } from '@/features/expenses/components/ExpenseFormModal';
+import { IncomeFormModal } from '@/features/incomes/components/IncomeFormModal';
+import { useToast } from '@/shared/components/Toast';
+import { toFiniteNumber } from '@/shared/utils/format';
+import type { ActivityItem } from '@/shared/utils/activity';
 import type { SharedExpense, SharedIncome } from '@/types/api';
 
-type Tab = 'expenses' | 'incomes' | 'balance';
+type FilterType = 'all' | 'expense' | 'income';
+type SortType = 'newest' | 'oldest';
+
+const FILTERS: { key: FilterType; label: string; showChevron?: boolean }[] = [
+  { key: 'all', label: 'Todos', showChevron: true },
+  { key: 'income', label: 'Ingresos' },
+  { key: 'expense', label: 'Gastos' },
+];
 
 export default function SharedFinancePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const user = useAuthStore((s) => s.user);
-  const [tab, setTab] = useState<Tab>('expenses');
+  const [filter, setFilter] = useState<FilterType>('all');
+  const [sort, setSort] = useState<SortType>('newest');
   const [search, setSearch] = useState('');
-  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
-  const [showForm, setShowForm] = useState(false);
-  const [formType, setFormType] = useState<'expense' | 'income'>('expense');
-  const [amount, setAmount] = useState('');
-  const [description, setDescription] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [editModal, setEditModal] = useState<{ type: 'expense' | 'income'; id: string } | null>(null);
 
   const { data: couple } = useQuery({
     queryKey: ['couple-status'],
     queryFn: () => couplesApi.getStatus(),
   });
 
-  const { data: expensesData, isLoading: expLoading, isError: expError, refetch: expRefetch } = useQuery({
-    queryKey: ['shared-expenses'],
-    queryFn: () => sharedExpensesApi.getAll(),
+  const pageSize = 30;
+
+  const expensesQuery = useInfiniteQuery({
+    queryKey: ['shared-expenses', 'activity'],
+    queryFn: ({ pageParam = 1 }) => sharedExpensesApi.getAll({ page: pageParam, limit: pageSize }),
+    getNextPageParam: (lastPage) => {
+      const { page, total_pages } = lastPage.pagination;
+      return page < total_pages ? page + 1 : undefined;
+    },
+    initialPageParam: 1,
   });
 
-  const { data: incomesData, isLoading: incLoading, isError: incError, refetch: incRefetch } = useQuery({
-    queryKey: ['shared-incomes'],
-    queryFn: () => sharedExpensesApi.getAllIncomes(),
+  const incomesQuery = useInfiniteQuery({
+    queryKey: ['shared-incomes', 'activity'],
+    queryFn: ({ pageParam = 1 }) => sharedExpensesApi.getAllIncomes({ page: pageParam, limit: pageSize }),
+    getNextPageParam: (lastPage) => {
+      const { page, total_pages } = lastPage.pagination;
+      return page < total_pages ? page + 1 : undefined;
+    },
+    initialPageParam: 1,
   });
 
-  const createExpenseMutation = useMutation({
-    mutationFn: () => sharedExpensesApi.create({ amount: Number(amount), description, expense_date: date }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['shared-expenses'] }); toast('success', 'Gasto compartido creado'); resetForm(); },
-    onError: () => toast('error', 'Error al crear gasto compartido'),
+  const deleteMutation = useMutation({
+    mutationFn: (item: ActivityItem) => item._type === 'expense' ? sharedExpensesApi.remove(item.id) : sharedExpensesApi.removeIncome(item.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['shared-expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['shared-incomes'] });
+      toast('success', 'Movimiento eliminado');
+    },
   });
 
-  const createIncomeMutation = useMutation({
-    mutationFn: () => sharedExpensesApi.createIncome({ amount: Number(amount), description, income_date: date }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['shared-incomes'] }); toast('success', 'Ingreso compartido creado'); resetForm(); },
-    onError: () => toast('error', 'Error al crear ingreso compartido'),
+  const duplicateMutation = useMutation<SharedExpense | SharedIncome, Error, ActivityItem>({
+    mutationFn: (item: ActivityItem) => item._type === 'expense'
+      ? sharedExpensesApi.create({ amount: item.amount, description: `${item.description} copia`, expense_date: new Date().toISOString().split('T')[0] })
+      : sharedExpensesApi.createIncome({ amount: item.amount, description: `${item.description} copia`, income_date: new Date().toISOString().split('T')[0] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['shared-expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['shared-incomes'] });
+      toast('success', 'Movimiento duplicado');
+    },
   });
 
-  const deleteExpenseMutation = useMutation({
-    mutationFn: (id: string) => sharedExpensesApi.remove(id),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['shared-expenses'] }); toast('success', 'Gasto eliminado'); },
-  });
+  const allItems = useMemo(() => {
+    const expenses: ActivityItem[] = (expensesQuery.data?.pages.flatMap(p => p.data) ?? []).map((e: SharedExpense) => ({
+      id: e.id,
+      _type: 'expense' as const,
+      description: e.description,
+      amount: toFiniteNumber(e.amount),
+      date: e.expense_date,
+      createdAt: e.created_at,
+      category: 'Gasto',
+    }));
+    const incomes: ActivityItem[] = (incomesQuery.data?.pages.flatMap(p => p.data) ?? []).map((i: SharedIncome) => ({
+      id: i.id,
+      _type: 'income' as const,
+      description: i.description,
+      amount: toFiniteNumber(i.amount),
+      date: i.income_date,
+      createdAt: i.created_at,
+      category: 'Ingreso',
+    }));
+    return [...expenses, ...incomes];
+  }, [expensesQuery.data, incomesQuery.data]);
 
-  const resetForm = () => {
-    setAmount(''); setDescription(''); setDate(new Date().toISOString().slice(0, 10)); setShowForm(false);
-  };
+  const summary = useMemo(() => {
+    const income = allItems.filter(i => i._type === 'income').reduce((acc, item) => acc + item.amount, 0);
+    const expense = allItems.filter(i => i._type === 'expense').reduce((acc, item) => acc + item.amount, 0);
+    return {
+      movements: allItems.length,
+      income,
+      expense,
+      balance: income - expense,
+    };
+  }, [allItems]);
 
-  const expenses = expensesData?.data || [];
-  const incomes = incomesData?.data || [];
-  const totalExpenses = expenses.reduce((sum: number, e: SharedExpense) => sum + e.amount, 0);
-  const totalIncomes = incomes.reduce((sum: number, i: SharedIncome) => sum + i.amount, 0);
-  const balance = totalIncomes - totalExpenses;
+  const filtered = useMemo(() => {
+    let items = allItems;
+    if (filter !== 'all') items = items.filter(i => i._type === filter);
+    if (search) {
+      const q = search.toLowerCase();
+      items = items.filter(i => i.description.toLowerCase().includes(q) || i.category.toLowerCase().includes(q));
+    }
 
-  const filteredExpenses = useMemo(() => {
-    const base = expensesData?.data || [];
-    const q = search.trim().toLowerCase();
-    const list = q
-      ? base.filter((e) => e.description.toLowerCase().includes(q))
-      : base;
-    return [...list].sort((a, b) => {
-      const diff = new Date(a.expense_date).getTime() - new Date(b.expense_date).getTime();
-      return sortOrder === 'desc' ? -diff : diff;
+    return [...items].sort((a, b) => {
+      const diff = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      return sort === 'newest' ? diff : -diff;
     });
-  }, [expensesData, search, sortOrder]);
-
-  const filteredIncomes = useMemo(() => {
-    const base = incomesData?.data || [];
-    const q = search.trim().toLowerCase();
-    const list = q
-      ? base.filter((i) => i.description.toLowerCase().includes(q))
-      : base;
-    return [...list].sort((a, b) => {
-      const diff = new Date(a.income_date).getTime() - new Date(b.income_date).getTime();
-      return sortOrder === 'desc' ? -diff : diff;
-    });
-  }, [incomesData, search, sortOrder]);
+  }, [allItems, filter, search, sort]);
 
   const isLinked = couple?.status === 'accepted';
+  const isLoading = expensesQuery.isLoading || incomesQuery.isLoading;
+  const isError = expensesQuery.isError || incomesQuery.isError;
+  const hasMore = expensesQuery.hasNextPage || incomesQuery.hasNextPage;
+  const loadingMore = expensesQuery.isFetchingNextPage || incomesQuery.isFetchingNextPage;
+
+  const handleLoadMore = () => {
+    if (expensesQuery.hasNextPage) expensesQuery.fetchNextPage();
+    if (incomesQuery.hasNextPage) incomesQuery.fetchNextPage();
+  };
+
+  const handleDelete = (item: ActivityItem) => {
+    if (window.confirm('¿Eliminar este movimiento compartido?')) deleteMutation.mutate(item);
+  };
 
   if (!isLinked) {
     return (
@@ -112,189 +160,84 @@ export default function SharedFinancePage() {
   }
 
   return (
-    <div>
-      <div className="dashboard-header">
-        <h1>Finanzas Compartidas</h1>
-        <button className="btn btn--primary" onClick={() => { setFormType('expense'); setShowForm(true); }}>
-          <Plus size={16} /> Nuevo
-        </button>
+    <div className="activity-screen">
+      <div className="activity-header">
+        <div>
+          <h1>Finanzas Compartidas</h1>
+          <p>Administra los gastos e ingresos que compartes con tu pareja.</p>
+        </div>
+        <NewMovementButton context="shared" />
       </div>
 
-      <div className="goals-summary-grid" style={{ marginBottom: 'var(--space-6)' }}>
-        <Card hover={false}>
-          <p className="summary-card__label">Gastos totales</p>
-          <p className="summary-card__value" style={{ color: 'var(--color-danger)' }}>
-            <MoneyDisplay amount={totalExpenses} />
-          </p>
+      <CardGrid columns={4}>
+        <Card className="activity-summary-card">
+          <span>Movimientos</span>
+          <strong>{summary.movements}</strong>
         </Card>
-        <Card hover={false}>
-          <p className="summary-card__label">Ingresos totales</p>
-          <p className="summary-card__value" style={{ color: 'var(--color-success)' }}>
-            <MoneyDisplay amount={totalIncomes} />
-          </p>
+        <Card className="activity-summary-card">
+          <span>Ingresos</span>
+          <MoneyDisplay amount={summary.income} size="lg" color="positive" />
         </Card>
-        <Card hover={false}>
-          <p className="summary-card__label">Balance</p>
-          <p className="summary-card__value" style={{ color: balance >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
-            <MoneyDisplay amount={balance} />
-          </p>
+        <Card className="activity-summary-card">
+          <span>Gastos</span>
+          <MoneyDisplay amount={summary.expense} size="lg" color="negative" />
         </Card>
-      </div>
+        <Card className="activity-summary-card">
+          <span>Balance</span>
+          <MoneyDisplay amount={summary.balance} size="lg" color={summary.balance >= 0 ? 'positive' : 'negative'} />
+        </Card>
+      </CardGrid>
 
       <FilterToolbar
-        filters={[
-          { key: 'expenses', label: 'Gastos' },
-          { key: 'incomes', label: 'Ingresos' },
-          { key: 'balance', label: 'Balance' },
-        ]}
-        activeFilter={tab}
-        onFilterChange={(key) => setTab(key as Tab)}
+        filters={FILTERS}
+        activeFilter={filter}
+        onFilterChange={(key) => setFilter(key as FilterType)}
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Buscar en finanzas compartidas..."
         ariaLabel="Filtros de finanzas compartidas"
-        sortLabel={sortOrder === 'desc' ? 'Más recientes' : 'Más antiguos'}
-        onSortClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
-        onFilterClick={() => { setTab('expenses'); setSearch(''); }}
+        sortLabel={sort === 'newest' ? 'Más recientes' : 'Más antiguos'}
+        onSortClick={() => setSort(sort === 'newest' ? 'oldest' : 'newest')}
+        onFilterClick={() => { setFilter('all'); setSearch(''); }}
       />
 
-      {showForm && (
-        <div className="card" style={{ marginBottom: 'var(--space-6)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
-            <h3>{formType === 'expense' ? 'Nuevo gasto compartido' : 'Nuevo ingreso compartido'}</h3>
-            <button className="btn btn--ghost btn--sm" onClick={resetForm}><ArrowLeft size={16} /> Cancelar</button>
-          </div>
-
-          <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
-            <button className={`chip ${formType === 'expense' ? 'chip--active' : ''}`} onClick={() => setFormType('expense')}>Gasto</button>
-            <button className={`chip ${formType === 'income' ? 'chip--active' : ''}`} onClick={() => setFormType('income')}>Ingreso</button>
-          </div>
-
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            if (formType === 'expense') {
-              createExpenseMutation.mutate();
-            } else {
-              createIncomeMutation.mutate();
-            }
-          }}>
-            <div className="form-group">
-              <label className="form-label">Descripción</label>
-              <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Ej: Cena, alquiler" required />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Monto</label>
-              <input type="number" step="0.01" min="0" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} required />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Fecha</label>
-              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
-            </div>
-            <button className="btn btn--primary" type="submit" disabled={createExpenseMutation.isPending || createIncomeMutation.isPending} style={{ marginTop: 'var(--space-3)' }}>
-              <DollarSign size={16} /> {formType === 'expense' ? 'Crear gasto' : 'Crear ingreso'}
-            </button>
-          </form>
-        </div>
+      {isLoading ? (
+        <SkeletonCard count={6} />
+      ) : isError ? (
+        <ErrorState onRetry={() => { expensesQuery.refetch(); incomesQuery.refetch(); }} />
+      ) : filtered.length === 0 ? (
+        <Card hover={false} className="activity-empty-card">
+          <EmptyState
+            icon={Users}
+            title={search ? 'Sin resultados' : 'Todavía no tienes movimientos compartidos'}
+            message={search ? 'Prueba con otro término o limpia los filtros.' : 'Agrega el primer gasto o ingreso que compartan.'}
+            action={search ? { label: 'Limpiar búsqueda', onClick: () => setSearch('') } : undefined}
+          />
+        </Card>
+      ) : (
+        <ActivityList
+          items={filtered}
+          onEdit={(item) => setEditModal({ type: item._type, id: item.id })}
+          onDuplicate={(item) => duplicateMutation.mutate(item)}
+          onDelete={handleDelete}
+          hasMore={hasMore}
+          loadingMore={loadingMore}
+          onLoadMore={handleLoadMore}
+        />
       )}
 
-      {tab === 'expenses' && (
-        expLoading ? <SkeletonCard count={3} /> :
-        expError ? <ErrorState onRetry={expRefetch} /> :
-        expenses.length === 0 ? (
-          <EmptyState icon={Users} title="Sin gastos compartidos" message="Agrega gastos que ambos compartan." />
-        ) : filteredExpenses.length === 0 ? (
-          <EmptyState icon={Search} title="Sin resultados" message="Prueba con otro término o limpia la búsqueda." action={{ label: 'Limpiar búsqueda', onClick: () => setSearch('') }} />
-        ) : (
-          <div className="goals-grid">
-            {filteredExpenses.map((expense: SharedExpense) => (
-              <Card key={expense.id} hover={false}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <div>
-                    <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 600 }}>{expense.description}</h3>
-                    <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 'var(--space-1)' }}>
-                      {new Date(expense.expense_date).toLocaleDateString('es')}
-                      {expense.paid_by === user?.id ? ' · Pagado por ti' : ' · Pagado por tu pareja'}
-                    </p>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <p style={{ fontWeight: 700, color: 'var(--color-danger)', fontSize: 'var(--text-lg)' }}>
-                      <MoneyDisplay amount={expense.amount} />
-                    </p>
-                    <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
-                      Tu mitad: <MoneyDisplay amount={expense.amount / 2} />
-                    </p>
-                  </div>
-                </div>
-                <button className="btn btn--ghost btn--sm" style={{ marginTop: 'var(--space-2)' }}
-                  onClick={() => { if (window.confirm('¿Eliminar este gasto?')) deleteExpenseMutation.mutate(expense.id); }}>
-                  <Trash2 size={14} /> Eliminar
-                </button>
-              </Card>
-            ))}
-          </div>
-        )
-      )}
-
-      {tab === 'incomes' && (
-        incLoading ? <SkeletonCard count={3} /> :
-        incError ? <ErrorState onRetry={incRefetch} /> :
-        incomes.length === 0 ? (
-          <EmptyState icon={Users} title="Sin ingresos compartidos" message="Agrega ingresos compartidos." />
-        ) : filteredIncomes.length === 0 ? (
-          <EmptyState icon={Search} title="Sin resultados" message="Prueba con otro término o limpia la búsqueda." action={{ label: 'Limpiar búsqueda', onClick: () => setSearch('') }} />
-        ) : (
-          <div className="goals-grid">
-            {filteredIncomes.map((income: SharedIncome) => (
-              <Card key={income.id} hover={false}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <div>
-                    <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 600 }}>{income.description}</h3>
-                    <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 'var(--space-1)' }}>
-                      {new Date(income.income_date).toLocaleDateString('es')}
-                    </p>
-                  </div>
-                  <p style={{ fontWeight: 700, color: 'var(--color-success)', fontSize: 'var(--text-lg)' }}>
-                    <MoneyDisplay amount={income.amount} />
-                  </p>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )
-      )}
-
-      {tab === 'balance' && (
-        <div className="goals-grid">
-          <Card hover={false}>
-            <h3 style={{ marginBottom: 'var(--space-3)' }}>Resumen de balance</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Total gastado (ambos)</span>
-                <span style={{ fontWeight: 600 }}><MoneyDisplay amount={totalExpenses} /></span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Tu mitad de gastos</span>
-                <span style={{ fontWeight: 600 }}><MoneyDisplay amount={totalExpenses / 2} /></span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Total ingresado (ambos)</span>
-                <span style={{ fontWeight: 600 }}><MoneyDisplay amount={totalIncomes} /></span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Tu mitad de ingresos</span>
-                <span style={{ fontWeight: 600 }}><MoneyDisplay amount={totalIncomes / 2} /></span>
-              </div>
-              <hr style={{ border: 'none', borderTop: '1px solid var(--color-border-subtle)' }} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-lg)' }}>
-                <span style={{ fontWeight: 700 }}>Balance individual</span>
-                <span style={{ fontWeight: 800, color: balance >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
-                  <MoneyDisplay amount={balance} />
-                </span>
-              </div>
-            </div>
-          </Card>
-        </div>
-      )}
+      <ExpenseFormModal
+        open={editModal?.type === 'expense'}
+        onClose={() => setEditModal(null)}
+        context="shared"
+        expenseId={editModal?.type === 'expense' ? editModal.id : undefined}
+      />
+      <IncomeFormModal
+        open={editModal?.type === 'income'}
+        onClose={() => setEditModal(null)}
+        context="shared"
+        incomeId={editModal?.type === 'income' ? editModal.id : undefined}
+      />
     </div>
   );
 }
