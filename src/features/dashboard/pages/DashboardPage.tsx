@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   ArrowRight, BarChart3, CalendarDays, Lightbulb, PiggyBank,
-  Plus, Target, TrendingDown, TrendingUp, Wallet, Users,
+  Plus, Share2, Target, TrendingDown, TrendingUp, Wallet, Users,
 } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -16,6 +16,7 @@ import { SkeletonCard } from '@/shared/components/Skeleton';
 import { EmptyState } from '@/shared/components/EmptyState';
 import { ErrorState } from '@/shared/components/ErrorState';
 import { useAuthStore } from '@/features/auth/store/auth-store';
+import { shareData, canShare } from '@/pwa/device';
 import { formatRelative, formatCurrency, toFiniteNumber } from '@/shared/utils/format';
 import { couplesApi } from '@/services/api';
 
@@ -153,6 +154,23 @@ export default function DashboardPage() {
           <p>{new Date().toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
         </div>
         <div className="dashboard-header__actions">
+          {canShare() && (
+            <button
+              className="dashboard-period"
+              type="button"
+              title="Compartir resumen"
+              onClick={async () => {
+                const text = `Mis finanzas de ${period} en Together:\n` +
+                  `• Balance: ${formatCurrency(balance)}\n` +
+                  `• Ingresos: ${formatCurrency(income)}\n` +
+                  `• Gastos: ${formatCurrency(expense)}\n` +
+                  `• Ahorro: ${formatCurrency(saving)} (${savingsRate}%)`;
+                await shareData({ text, title: 'Resumen financiero — Together' });
+              }}
+            >
+              <Share2 size={16} />
+            </button>
+          )}
           <button className="dashboard-period" type="button">
             <CalendarDays size={16} /> {period} <span aria-hidden="true">▼</span>
           </button>

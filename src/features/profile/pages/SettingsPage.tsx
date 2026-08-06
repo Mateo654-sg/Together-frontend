@@ -7,6 +7,7 @@ import { ArrowLeft, Save, Download, Trash2, Smartphone, Monitor, LogOut } from '
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/shared/components/Toast';
 import { usersApi } from '@/services/api';
+import { requestNotificationPermission, showLocalNotification, notificationsSupported, vibrate } from '@/pwa/device';
 import type { SessionHistoryItem } from '@/types/api';
 
 const currencies = ['COP', 'USD', 'EUR', 'MXN', 'ARS', 'CLP', 'PEN', 'BRL'];
@@ -168,10 +169,45 @@ export default function SettingsPage() {
             <input
               type="checkbox"
               checked={notificationsEnabled}
-              onChange={(e) => setNotificationsEnabled(e.target.checked)}
+              onChange={async (e) => {
+                const enabled = e.target.checked;
+                setNotificationsEnabled(enabled);
+                if (enabled && notificationsSupported()) {
+                  const permission = await requestNotificationPermission();
+                  if (permission !== 'granted') {
+                    toast('warning', 'Permiso de notificaciones denegado en el dispositivo.');
+                    setNotificationsEnabled(false);
+                  }
+                }
+              }}
             />
             Notificaciones activadas
           </label>
+          {notificationsSupported() && (
+            <button
+              type="button"
+              className="btn btn--secondary btn--sm"
+              style={{ marginTop: 'var(--space-2)' }}
+              onClick={async () => {
+                if (Notification.permission !== 'granted') {
+                  const permission = await requestNotificationPermission();
+                  if (permission !== 'granted') {
+                    toast('warning', 'Activa el permiso de notificaciones en tu navegador.');
+                    return;
+                  }
+                }
+                vibrate([60, 40, 60]);
+                showLocalNotification('Together', {
+                  body: 'Las notificaciones del dispositivo funcionan correctamente.',
+                  icon: '/icons/pwa-192x192.png',
+                  badge: '/icons/pwa-192x192.png',
+                });
+                toast('success', 'Notificación de prueba enviada.');
+              }}
+            >
+              Probar notificación
+            </button>
+          )}
         </div>
       </Card>
 

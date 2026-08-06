@@ -98,6 +98,20 @@ apiClient.interceptors.response.use(
     ];
     const isAuthRequest = AUTH_PATHS.some((p) => originalRequest._url?.endsWith(p));
 
+    // Sin conexión: no intentar refresh ni logout (modo offline).
+    if (error.code === 'ERR_NETWORK' || !error.response) {
+      const offlineError = new Error(
+        'Sin conexión a internet. Los cambios se guardarán y sincronizarán automáticamente.'
+      ) as Error & { response: ApiResponse<unknown>; status: number };
+      offlineError.response = {
+        success: false,
+        message: offlineError.message,
+        errors: [{ field: 'general', message: 'network error' }],
+      };
+      offlineError.status = 0;
+      return Promise.reject(offlineError);
+    }
+
     if (error.response?.status !== 401 || originalRequest._retry || isAuthRequest) {
       const apiError: ApiResponse<unknown> = error.response?.data ?? {
         success: false,

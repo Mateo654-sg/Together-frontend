@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CreditCard, Save, Tags } from 'lucide-react';
-import { categoriesApi, expensesApi, sharedExpensesApi, tagsApi } from '@/services/api';
+import { CreditCard, Save, Tags, MapPin, Camera, Loader2, X } from 'lucide-react';
+import { categoriesApi, expensesApi, sharedExpensesApi, tagsApi, uploadApi } from '@/services/api';
 import { Modal } from '@/shared/components/Modal';
 import { SkeletonCard } from '@/shared/components/Skeleton';
 import { useToast } from '@/shared/components/Toast';
+import { getFriendlyLocation, captureImageFile, vibrate } from '@/pwa/device';
 import type { MovementContext } from '@/shared/utils/activity';
 import type { Expense, SharedExpense, Tag } from '@/types/api';
 
@@ -47,6 +48,9 @@ export function ExpenseFormModal({ open, onClose, context, expenseId }: ExpenseF
   const [location, setLocation] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [newTagName, setNewTagName] = useState('');
+  const [attachment, setAttachment] = useState('');
+  const [attaching, setAttaching] = useState(false);
+  const [geolocating, setGeolocating] = useState(false);
 
   const { data: categories } = useQuery({
     queryKey: ['categories', 'expense'],
@@ -78,6 +82,7 @@ export function ExpenseFormModal({ open, onClose, context, expenseId }: ExpenseF
       setLocation('');
       setSelectedTags([]);
       setNewTagName('');
+      setAttachment('');
       return;
     }
     if (existing) {
@@ -92,6 +97,7 @@ export function ExpenseFormModal({ open, onClose, context, expenseId }: ExpenseF
           PAYMENT_METHODS.includes(item.payment_method as typeof PAYMENT_METHODS[number]) ? item.payment_method || '' : ''
         );
         setLocation(item.location || '');
+        setAttachment(item.attachment_url || '');
         setSelectedTags((item.tags ?? []).map((t: Tag) => t.id));
       }
     }
@@ -101,6 +107,38 @@ export function ExpenseFormModal({ open, onClose, context, expenseId }: ExpenseF
     setSelectedTags((prev) =>
       prev.includes(tagId) ? prev.filter((t) => t !== tagId) : [...prev, tagId]
     );
+  };
+
+  const handleGeolocate = async () => {
+    if (geolocating) return;
+    setGeolocating(true);
+    try {
+      const label = await getFriendlyLocation();
+      setLocation(label);
+      vibrate(30);
+    } catch {
+      toast('error', 'No se pudo obtener tu ubicación. Revisa los permisos de GPS.');
+    } finally {
+      setGeolocating(false);
+    }
+  };
+
+  const handleAttachPhoto = async () => {
+    if (attaching) return;
+    try {
+      const file = await captureImageFile();
+      setAttaching(true);
+      const { url } = await uploadApi.uploadImage(file);
+      setAttachment(url);
+      vibrate(30);
+    } catch (error) {
+      const message = error instanceof Error && error.message.includes('cancelada')
+        ? ''
+        : 'No se pudo adjuntar la imagen.';
+      if (message) toast('error', message);
+    } finally {
+      setAttaching(false);
+    }
   };
 
   const createTagMutation = useMutation({
@@ -122,6 +160,7 @@ export function ExpenseFormModal({ open, onClose, context, expenseId }: ExpenseF
           ...common,
           payment_method: paymentMethod,
           ...(location && { location }),
+          ...(attachment && { attachment_url: attachment }),
           ...(selectedTags.length > 0 && { tag_ids: selectedTags }),
         };
         return editMode ? expensesApi.update(expenseId!, payload) : expensesApi.create(payload);
@@ -197,7 +236,41 @@ export function ExpenseFormModal({ open, onClose, context, expenseId }: ExpenseF
           {context === 'personal' && (
             <div className="form-group">
               <label className="form-label">Ubicación</label>
-              <input className="form-input" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Ej: Tienda" />
+              <div className="device-field">
+                <input className="form-input" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Ej: Tienda" />
+                <button
+                  type="button"
+                  className="btn btn--secondary btn--sm device-field__btn"
+                  onClick={handleGeolocate}
+                  disabled={geolocating}
+                >
+                  {geolocating ? <Loader2 size={14} className="spin" /> : <MapPin size={14} />}
+                  {geolocating ? 'Ubicando...' : 'GPS'}
+                </button>
+              </div>
+            </div>
+          )}
+          {context === 'personal' && (
+            <div className="form-group">
+              <label className="form-label">Recibo / Foto</label>
+              {attachment ? (
+                <div className="attachment">
+                  <img src={attachment} alt="Adjunto del gasto" className="attachment__img" />
+                  <button
+                    type="button"
+                    className="attachment__remove"
+                    onClick={() => setAttachment('')}
+                    aria-label="Quitar imagen"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              ) : (
+                <button type="button" className="btn btn--secondary btn--sm" onClick={handleAttachPhoto} disabled={attaching}>
+                  {attaching ? <Loader2 size={14} className="spin" /> : <Camera size={14} />}
+                  {attaching ? 'Subiendo...' : 'Tomar foto / adjuntar'}
+                </button>
+              )}
             </div>
           )}
           {context === 'personal' && (

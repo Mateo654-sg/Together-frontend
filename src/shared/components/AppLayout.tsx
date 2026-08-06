@@ -23,6 +23,8 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { useAuthStore } from '@/features/auth/store/auth-store';
+import { OfflineBanner } from '@/pwa/OfflineBanner';
+import { InstallButton } from '@/pwa/InstallButton';
 
 const navItems = [
   { path: '/dashboard', label: 'Inicio', icon: LayoutDashboard },
@@ -93,6 +95,7 @@ export function AppLayout() {
         </nav>
 
         <div className="sidebar__footer">
+          <InstallButton />
           <button className="sidebar__link sidebar__link--logout" onClick={handleLogout}>
             <LogOut size={20} />
             <span>Cerrar sesión</span>
@@ -120,6 +123,8 @@ export function AppLayout() {
             </div>
           </div>
         </header>
+
+        <OfflineBanner />
 
         {/* Page content */}
         <main className="main-content" id="main-content" tabIndex={-1}>

@@ -35,6 +35,7 @@ export interface Expense {
 export interface CreateExpenseInput {
   amount: number; description: string; expense_date: string;
   category_id?: string; notes?: string; payment_method?: string; location?: string;
+  attachment_url?: string;
   tag_ids?: string[];
 }
 export interface UpdateExpenseInput extends Partial<Omit<CreateExpenseInput, 'amount' | 'description' | 'expense_date'>> {

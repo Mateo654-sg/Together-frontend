@@ -5,7 +5,12 @@ import '@styles/index.css';
 import { registerSW } from 'virtual:pwa-register';
 import { ToastProvider } from '@/shared/components/Toast';
 import { ThemeManager } from '@/shared/theme/ThemeManager';
+import { initNetworkListeners } from '@/pwa/network';
+import { initSyncBridge } from '@/pwa/syncBridge';
+import { PwaSyncToasts } from '@/pwa/PwaSyncToasts';
 
+initNetworkListeners();
+initSyncBridge();
 
 registerSW({
   onNeedRefresh() { window.location.reload(); },
@@ -19,6 +24,7 @@ createRoot(root).render(
   <StrictMode>
     <ToastProvider>
       <ThemeManager />
+      <PwaSyncToasts />
       <App />
     </ToastProvider>
   </StrictMode>

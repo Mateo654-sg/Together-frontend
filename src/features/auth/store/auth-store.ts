@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { authApi, usersApi, tokenStorage } from '@/services/api';
+import { clearApiCaches } from '@/pwa/syncBridge';
 import type { LoginInput, RegisterInput, User } from '@/types/api';
 
 let pendingVerificationToken: string | null = null;
@@ -82,6 +83,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       // silent
     } finally {
       tokenStorage.clearTokens();
+      void clearApiCaches();
       set({ user: null, isAuthenticated: false, isLoading: false });
     }
   },
@@ -91,6 +93,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       await authApi.refresh();
     } catch {
       tokenStorage.clearTokens();
+      void clearApiCaches();
       set({ user: null, isAuthenticated: false });
     }
   },
@@ -107,6 +110,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ user, isAuthenticated: true, isLoading: false });
     } catch {
       tokenStorage.clearTokens();
+      void clearApiCaches();
       set({ user: null, isAuthenticated: false, isLoading: false });
     }
   },

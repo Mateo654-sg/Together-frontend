@@ -25,6 +25,9 @@
       "@types/*": ["./src/types/*"]
     }
   },
+  "exclude": [
+    "src/pwa/sw.ts"
+  ],
   "include": [
     "src"
   ],
