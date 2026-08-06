@@ -1,15 +1,6 @@
 import apiClient, { tokenStorage } from '@/config/api';
 import type { LoginInput, RegisterInput, TokenResponse } from '@/types/api';
 
-function storeTokens(tokens: TokenResponse): void {
-  if (tokens?.access_token) {
-    tokenStorage.setAccessToken(tokens.access_token);
-  }
-  if (tokens?.refresh_token) {
-    tokenStorage.setRefreshToken(tokens.refresh_token);
-  }
-}
-
 export const authApi = {
   async register(input: RegisterInput): Promise<TokenResponse> {
     const response = await apiClient.post<TokenResponse>('/auth/register', {
@@ -19,7 +10,9 @@ export const authApi = {
       password: input.password,
     });
     const tokens = response.data;
-    storeTokens(tokens);
+    if (tokens?.access_token) {
+      tokenStorage.setAccessToken(tokens.access_token);
+    }
     return tokens;
   },
 
@@ -29,25 +22,28 @@ export const authApi = {
       password: input.password,
     });
     const tokens = response.data;
-    storeTokens(tokens);
+    if (tokens?.access_token) {
+      tokenStorage.setAccessToken(tokens.access_token);
+    }
     return tokens;
   },
 
   async refresh(): Promise<TokenResponse> {
-    const refreshToken = tokenStorage.getRefreshToken();
-    const response = await apiClient.post<TokenResponse>(
-      '/auth/refresh',
-      refreshToken ? { refresh_token: refreshToken } : {}
-    );
+    // El refresh token viaja en la cookie HttpOnly del mismo origen.
+    const response = await apiClient.post<TokenResponse>('/auth/refresh', {});
     const tokens = response.data;
-    storeTokens(tokens);
+    if (tokens?.access_token) {
+      tokenStorage.setAccessToken(tokens.access_token);
+    }
     return tokens;
   },
 
   async googleLogin(idToken: string): Promise<TokenResponse> {
     const response = await apiClient.post<TokenResponse>('/auth/google', { id_token: idToken });
     const tokens = response.data;
-    storeTokens(tokens);
+    if (tokens?.access_token) {
+      tokenStorage.setAccessToken(tokens.access_token);
+    }
     return tokens;
   },
 
@@ -56,9 +52,8 @@ export const authApi = {
   },
 
   async logout(): Promise<void> {
-    const refreshToken = tokenStorage.getRefreshToken();
     try {
-      await apiClient.post('/auth/logout', refreshToken ? { refresh_token: refreshToken } : {});
+      await apiClient.post('/auth/logout', {});
     } finally {
       tokenStorage.clearTokens();
     }

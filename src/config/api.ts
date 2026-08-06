@@ -11,7 +11,11 @@ import axios, {
 import type { ApiResponse } from '@/types/api';
 import { tokenStore } from './token-store';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api/v1';
+const DEV_API_URL = import.meta.env.VITE_API_URL || '/api/v1';
+
+// En producción la API se sirve desde el mismo origen (proxy en vercel.json),
+// de modo que el refresh token vive en cookie HttpOnly y se envía automáticamente.
+const API_BASE_URL = import.meta.env.PROD ? '/api/v1' : DEV_API_URL;
 
 let isRefreshing = false;
 let failedQueue: Array<{
@@ -36,19 +40,13 @@ export const setLogoutCallback = (cb: () => void) => {
   _onLogout = cb;
 };
 
-// ── Token Storage (en memoria, no localStorage) ───────────
+// ── Token Storage (solo access token en memoria; refresh en cookie HttpOnly) ──
 export const tokenStorage = {
   getAccessToken(): string | null {
     return tokenStore.get();
   },
   setAccessToken(token: string): void {
     tokenStore.set(token);
-  },
-  getRefreshToken(): string | null {
-    return tokenStore.getRefresh();
-  },
-  setRefreshToken(token: string): void {
-    tokenStore.setRefresh(token);
   },
   clearTokens(): void {
     tokenStore.clear();
@@ -91,7 +89,13 @@ apiClient.interceptors.response.use(
       originalRequest._url = originalRequest.url ?? '';
     }
 
-    const AUTH_PATHS = ['/auth/login', '/auth/register', '/auth/google'];
+    const AUTH_PATHS = [
+      '/auth/login',
+      '/auth/register',
+      '/auth/google',
+      '/auth/refresh',
+      '/auth/logout',
+    ];
     const isAuthRequest = AUTH_PATHS.some((p) => originalRequest._url?.endsWith(p));
 
     if (error.response?.status !== 401 || originalRequest._retry || isAuthRequest) {
@@ -123,24 +127,20 @@ apiClient.interceptors.response.use(
     isRefreshing = true;
 
     try {
-      const refreshToken = tokenStorage.getRefreshToken();
+      // El refresh token viaja en la cookie HttpOnly (mismo origen); el body va vacío.
       const refreshResponse = await axios.post<{
         access_token: string;
-        refresh_token?: string;
       }>(
         `${API_BASE_URL}/auth/refresh`,
-        refreshToken ? { refresh_token: refreshToken } : {},
+        {},
         {
           headers: { 'Content-Type': 'application/json' },
           withCredentials: true,
         }
       );
 
-      const { access_token, refresh_token } = refreshResponse.data;
+      const { access_token } = refreshResponse.data;
       tokenStorage.setAccessToken(access_token);
-      if (refresh_token) {
-        tokenStorage.setRefreshToken(refresh_token);
-      }
       processQueue(null, access_token);
 
       if (originalRequest.headers) {

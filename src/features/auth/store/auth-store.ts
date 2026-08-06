@@ -102,13 +102,6 @@ export const useAuthStore = create<AuthState>((set) => ({
   restoreSession: async () => {
     set({ isLoading: true });
     try {
-      const accessToken = tokenStorage.getAccessToken();
-
-      if (!accessToken) {
-        set({ isLoading: false, isAuthenticated: false });
-        return;
-      }
-
       await authApi.refresh();
       const user = await usersApi.getMe();
       set({ user, isAuthenticated: true, isLoading: false });
