@@ -9,6 +9,7 @@ import { EmptyState } from '@/shared/components/EmptyState';
 import { useToast } from '@/shared/components/Toast';
 import { MoneyDisplay } from '@/shared/components/MoneyDisplay';
 import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '@/features/auth/store/auth-store';
 import type { SharedExpense, SharedIncome } from '@/types/api';
 
 type Tab = 'expenses' | 'incomes' | 'balance';
@@ -17,13 +18,13 @@ export default function SharedFinancePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const user = useAuthStore((s) => s.user);
   const [tab, setTab] = useState<Tab>('expenses');
   const [showForm, setShowForm] = useState(false);
   const [formType, setFormType] = useState<'expense' | 'income'>('expense');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const [source, setSource] = useState('');
 
   const { data: couple } = useQuery({
     queryKey: ['couple-status'],
@@ -41,13 +42,13 @@ export default function SharedFinancePage() {
   });
 
   const createExpenseMutation = useMutation({
-    mutationFn: () => sharedExpensesApi.create({ amount: Number(amount), description, date }),
+    mutationFn: () => sharedExpensesApi.create({ amount: Number(amount), description, expense_date: date }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['shared-expenses'] }); toast('success', 'Gasto compartido creado'); resetForm(); },
     onError: () => toast('error', 'Error al crear gasto compartido'),
   });
 
   const createIncomeMutation = useMutation({
-    mutationFn: () => sharedExpensesApi.createIncome({ amount: Number(amount), description, date, source, split_type: 'equal', received_by: '' }),
+    mutationFn: () => sharedExpensesApi.createIncome({ amount: Number(amount), description, income_date: date }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['shared-incomes'] }); toast('success', 'Ingreso compartido creado'); resetForm(); },
     onError: () => toast('error', 'Error al crear ingreso compartido'),
   });
@@ -58,7 +59,7 @@ export default function SharedFinancePage() {
   });
 
   const resetForm = () => {
-    setAmount(''); setDescription(''); setDate(new Date().toISOString().slice(0, 10)); setSource(''); setShowForm(false);
+    setAmount(''); setDescription(''); setDate(new Date().toISOString().slice(0, 10)); setShowForm(false);
   };
 
   const expenses = expensesData?.data || [];
@@ -133,7 +134,14 @@ export default function SharedFinancePage() {
             <button className={`chip ${formType === 'income' ? 'chip--active' : ''}`} onClick={() => setFormType('income')}>Ingreso</button>
           </div>
 
-          <form onSubmit={(e) => { e.preventDefault(); formType === 'expense' ? createExpenseMutation.mutate() : createIncomeMutation.mutate(); }}>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            if (formType === 'expense') {
+              createExpenseMutation.mutate();
+            } else {
+              createIncomeMutation.mutate();
+            }
+          }}>
             <div className="form-group">
               <label className="form-label">Descripción</label>
               <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Ej: Cena, alquiler" required />
@@ -146,12 +154,6 @@ export default function SharedFinancePage() {
               <label className="form-label">Fecha</label>
               <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
             </div>
-            {formType === 'income' && (
-              <div className="form-group">
-                <label className="form-label">Fuente</label>
-                <input value={source} onChange={(e) => setSource(e.target.value)} placeholder="Ej: Salario, freelance" />
-              </div>
-            )}
             <button className="btn btn--primary" type="submit" disabled={createExpenseMutation.isPending || createIncomeMutation.isPending} style={{ marginTop: 'var(--space-3)' }}>
               <DollarSign size={16} /> {formType === 'expense' ? 'Crear gasto' : 'Crear ingreso'}
             </button>
@@ -172,8 +174,8 @@ export default function SharedFinancePage() {
                   <div>
                     <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 600 }}>{expense.description}</h3>
                     <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 'var(--space-1)' }}>
-                      {new Date(expense.date).toLocaleDateString('es')}
-                      {expense.paid_by ? ` Pagado por: ${expense.paid_by}` : ''}
+                      {new Date(expense.expense_date).toLocaleDateString('es')}
+                      {expense.paid_by === user?.id ? ' · Pagado por ti' : ' · Pagado por tu pareja'}
                     </p>
                   </div>
                   <div style={{ textAlign: 'right' }}>
@@ -208,8 +210,7 @@ export default function SharedFinancePage() {
                   <div>
                     <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 600 }}>{income.description}</h3>
                     <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 'var(--space-1)' }}>
-                      {new Date(income.date).toLocaleDateString('es')}
-                      {income.source ? ` ${income.source}` : ''}
+                      {new Date(income.income_date).toLocaleDateString('es')}
                     </p>
                   </div>
                   <p style={{ fontWeight: 700, color: 'var(--color-success)', fontSize: 'var(--text-lg)' }}>

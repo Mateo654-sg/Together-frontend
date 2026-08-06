@@ -8,6 +8,7 @@ const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage'));
 const RegisterPage = lazy(() => import('@/features/auth/pages/RegisterPage'));
 const ForgotPasswordPage = lazy(() => import('@/features/auth/pages/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('@/features/auth/pages/ResetPasswordPage'));
+const VerifyEmailPage = lazy(() => import('@/features/auth/pages/VerifyEmailPage'));
 const DashboardPage = lazy(() => import('@/features/dashboard/pages/DashboardPage'));
 const ExpenseDetailPage = lazy(() => import('@/features/expenses/pages/ExpenseDetailPage'));
 const ExpenseFormPage = lazy(() => import('@/features/expenses/pages/ExpenseFormPage'));
@@ -32,6 +33,8 @@ const ProfilePage = lazy(() => import('@/features/profile/pages/ProfilePage'));
 const NotificationsPage = lazy(() => import('@/features/notifications/pages/NotificationsPage'));
 const ReportsPage = lazy(() => import('@/features/reports/pages/ReportsPage'));
 const SettingsPage = lazy(() => import('@/features/profile/pages/SettingsPage'));
+const TransfersPage = lazy(() => import('@/features/transfers/pages/TransfersPage'));
+const RecurringPage = lazy(() => import('@/features/recurring/pages/RecurringPage'));
 
 function SuspenseWrapper({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<PageLoader />}>{children}</Suspense>;
@@ -57,6 +60,7 @@ export function Router() {
         <Route path="/register" element={<SuspenseWrapper><RegisterPage /></SuspenseWrapper>} />
         <Route path="/forgot-password" element={<SuspenseWrapper><ForgotPasswordPage /></SuspenseWrapper>} />
         <Route path="/reset-password" element={<SuspenseWrapper><ResetPasswordPage /></SuspenseWrapper>} />
+        <Route path="/verify-email" element={<SuspenseWrapper><VerifyEmailPage /></SuspenseWrapper>} />
       </Route>
       <Route element={<RequireAuth />}>
         <Route element={<AppLayout />}>
@@ -92,6 +96,8 @@ export function Router() {
           <Route path="/notifications" element={<SuspenseWrapper><NotificationsPage /></SuspenseWrapper>} />
           <Route path="/reports" element={<SuspenseWrapper><ReportsPage /></SuspenseWrapper>} />
           <Route path="/settings" element={<SuspenseWrapper><SettingsPage /></SuspenseWrapper>} />
+          <Route path="/transfers" element={<SuspenseWrapper><TransfersPage /></SuspenseWrapper>} />
+          <Route path="/recurring" element={<SuspenseWrapper><RecurringPage /></SuspenseWrapper>} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

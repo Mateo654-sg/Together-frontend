@@ -30,7 +30,7 @@ export default function ChatPage() {
 
   const partnerId = couple?.partner?.id;
 
-  const { data: messagesData, isLoading, refetch } = useQuery({
+  const { data: messagesData, isLoading } = useQuery({
     queryKey: ['chat', partnerId],
     queryFn: () => chatApi.getAll({ receiver_id: partnerId }),
     enabled: Boolean(partnerId),
@@ -104,7 +104,7 @@ export default function ChatPage() {
                   padding: 'var(--space-2) var(--space-3)',
                   borderRadius: isMe ? 'var(--radius-2xl) var(--radius-2xl) var(--space-2) var(--radius-2xl)' : 'var(--radius-2xl) var(--radius-2xl) var(--radius-2xl) var(--space-2)',
                   background: isMe ? 'var(--gradient-brand)' : 'var(--color-bg-elevated)',
-                  color: isMe ? 'white' : 'var(--color-text)',
+                  color: isMe ? 'white' : 'var(--color-text-primary)',
                   fontSize: 'var(--text-sm)',
                   ...(isShare ? { border: '1px solid var(--color-brand-500)', background: isMe ? 'var(--gradient-brand)' : 'var(--color-brand-50)' } : {}),
                 }}>

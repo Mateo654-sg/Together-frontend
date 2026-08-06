@@ -97,6 +97,54 @@
   --content-max-width: 1240px;
 }
 
+/* ── Light theme (data-theme="light") ────────────────────── */
+[data-theme='light'] {
+  --color-bg-base:     hsl(0, 0%, 98%);
+  --color-bg-surface:  hsl(0, 0%, 100%);
+  --color-bg-elevated: hsl(0, 0%, 100%);
+  --color-bg-overlay:  hsl(0, 0%, 95%);
+  --color-bg-input:    hsl(0, 0%, 100%);
+
+  --color-border-subtle:  hsl(240, 8%, 91%);
+  --color-border-default: hsl(240, 8%, 83%);
+  --color-border-strong:  hsl(240, 8%, 66%);
+
+  /* Contraste AA sobre fondo claro */
+  --color-text-primary:   hsl(240, 10%, 12%);
+  --color-text-secondary: hsl(240, 6%, 34%);
+  --color-text-muted:     hsl(240, 5%, 44%);
+  --color-text-disabled:  hsl(240, 5%, 58%);
+
+  --gradient-glow: radial-gradient(ellipse 80% 60% at 50% -10%, hsla(330, 100%, 56%, 0.10), transparent 60%);
+  --gradient-card: linear-gradient(160deg, hsl(0, 0%, 100%) 0%, hsl(0, 0%, 97%) 100%);
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 10px -2px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 12px 24px -6px rgba(0, 0, 0, 0.10), 0 4px 8px -4px rgba(0, 0, 0, 0.06);
+  --shadow-xl: 0 24px 48px -12px rgba(0, 0, 0, 0.14), 0 8px 16px -8px rgba(0, 0, 0, 0.08);
+  --shadow-elevated: 0 16px 32px -8px rgba(0, 0, 0, 0.10), 0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+}
+
+[data-theme='light'] a { color: var(--color-brand-700); }
+[data-theme='light'] a:hover { color: var(--color-brand-800); }
+
+[data-theme='light'] .glass {
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme='light'] ::-webkit-scrollbar-thumb { background: var(--color-border-strong); }
+[data-theme='light'] ::-webkit-scrollbar-thumb:hover { background: hsl(240, 8%, 55%); }
+
+[data-theme='light'] .skeleton {
+  background: linear-gradient(90deg, var(--color-bg-overlay) 25%, hsl(0, 0%, 92%) 50%, var(--color-bg-overlay) 75%);
+  background-size: 200% 100%;
+}
+
 /* ── Reduced motion: respeta la preferencia del sistema ──── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

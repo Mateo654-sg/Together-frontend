@@ -44,7 +44,16 @@ Abre `http://localhost:5173` en el navegador.
 npm run build
 ```
 
-Genera los archivos en `dist/` con service worker PWA incluido.
+Genera los archivos en `dist/` con service worker PWA incluido. Incluye
+typecheck (`tsc -b`).
+
+## Lint
+
+```bash
+npm run lint
+```
+
+ESLint 9 (flat config `eslint.config.js`). Estado actual: 0 errores, 0 warnings.
 
 ## Preview
 
@@ -54,28 +63,50 @@ npm run preview
 
 Sirve el build de producción localmente.
 
+## Configuración
+
+```bash
+# .env.local
+VITE_API_URL=http://localhost:8000/api/v1
+```
+
+Sin `VITE_API_URL`, el cliente usa `http://localhost:8000/api/v1` por defecto
+(`src/config/api.ts`). Ver `docs/19-api-contract.md` para el contrato completo.
+
 ## Estructura del proyecto
 
 ```
 src/
 ├── app/                  # Entry point, App, Router, Providers
-├── config/               # Axios client con interceptors
+├── config/               # Axios client con interceptors + token store
 ├── features/
 │   ├── auth/             # Login, Register, ForgotPassword + store
 │   ├── dashboard/        # Página principal con stats y charts
 │   ├── expenses/         # CRUD de gastos
+│   ├── incomes/          # CRUD de ingresos
+│   ├── shared-finance/   # Gastos/ingresos compartidos
+│   ├── debts/            # Deudas de pareja
 │   ├── goals/            # CRUD de metas de ahorro
+│   ├── budgets/          # Presupuestos y alertas
+│   ├── reminders/        # Recordatorios
+│   ├── categories/       # Categorías y tags
+│   ├── couple/           # Pareja (invitación, vínculo)
+│   ├── chat/             # Chat de pareja
+│   ├── calendar/         # Calendario
 │   ├── activity/         # Feed de actividad reciente
 │   ├── ai/               # Chat con asistente IA
 │   ├── notifications/    # Centro de notificaciones
-│   ├── profile/          # Perfil de usuario + settings
+│   ├── profile/          # Perfil de usuario
+│   ├── settings/         # Ajustes de la cuenta
 │   └── reports/          # Reportes financieros
 ├── services/api/         # Servicios API (un archivo por recurso)
 ├── shared/
 │   ├── components/       # Componentes reutilizables (Card, Toast, etc.)
+│   ├── hooks/            # Hooks globales
+│   ├── theme/            # Design tokens del tema
 │   └── utils/            # formatCurrency, formatDate, etc.
 ├── styles/               # CSS con design system completo
-└── types/                # Tipos TypeScript compartidos
+└── types/                # Tipos TypeScript compartidos (contrato API)
 ```
 
 ## Diseño

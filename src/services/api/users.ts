@@ -1,19 +1,12 @@
 import apiClient from '@/config/api';
-import type { User, UserSettings } from '@/types/api';
-
-export interface UserStatistics {
-  total_expenses: number;
-  total_incomes: number;
-  current_balance: number;
-  active_goals: number;
-}
+import type { SessionHistory, UpdateUserInput, User, UserSettings, UserStatistics } from '@/types/api';
 
 export const usersApi = {
   async getMe(): Promise<User> {
     const response = await apiClient.get<User>('/users/me');
     return response.data;
   },
-  async updateMe(data: Partial<User>): Promise<User> {
+  async updateMe(data: UpdateUserInput): Promise<User> {
     const response = await apiClient.put<User>('/users/me', data);
     return response.data;
   },
@@ -34,5 +27,28 @@ export const usersApi = {
   async updateSettings(data: Partial<UserSettings>): Promise<UserSettings> {
     const response = await apiClient.put<UserSettings>('/users/settings', data);
     return response.data;
+  },
+  async updateAvatar(avatarUrl: string): Promise<User> {
+    const response = await apiClient.patch<User>('/users/avatar', { avatar_url: avatarUrl });
+    return response.data;
+  },
+  async getSessions(): Promise<SessionHistory> {
+    const response = await apiClient.get<SessionHistory>('/users/sessions');
+    return response.data;
+  },
+  async revokeSession(sessionId: string): Promise<void> {
+    await apiClient.delete(`/users/sessions/${sessionId}`);
+  },
+  async revokeAllSessions(): Promise<void> {
+    await apiClient.post('/users/sessions/revoke-all');
+  },
+  async exportData(): Promise<{ blob: Blob; filename: string }> {
+    const response = await apiClient.get<Blob>('/users/export', { responseType: 'blob' });
+    const disposition = response.headers['content-disposition'] ?? '';
+    const match = disposition.match(/filename="?([^";]+)"?/i);
+    return {
+      blob: response.data,
+      filename: match?.[1] ?? `together-data-${new Date().toISOString().split('T')[0]}.zip`,
+    };
   },
 };

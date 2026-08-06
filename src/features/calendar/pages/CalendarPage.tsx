@@ -96,7 +96,7 @@ export default function CalendarPage() {
                 onClick={() => setSelectedDate(isSelected ? null : key)}
                 style={{
                   background: isSelected ? 'var(--gradient-brand)' : isToday ? 'var(--color-bg-elevated)' : 'transparent',
-                  color: isSelected ? 'white' : 'var(--color-text)',
+                  color: isSelected ? 'white' : 'var(--color-text-primary)',
                   border: isToday && !isSelected ? '1px solid var(--color-border-default)' : 'none',
                   borderRadius: 'var(--radius-lg)',
                   padding: 'var(--space-2) 0',

@@ -18,12 +18,17 @@ import {
   DollarSign,
   CalendarDays,
   MessageCircle,
+  BarChart3,
+  Repeat,
+  RefreshCw,
 } from 'lucide-react';
 import { useAuthStore } from '@/features/auth/store/auth-store';
 
 const navItems = [
   { path: '/dashboard', label: 'Inicio', icon: LayoutDashboard },
   { path: '/activity', label: 'Actividad', icon: ArrowLeftRight },
+  { path: '/transfers', label: 'Transferencias', icon: Repeat },
+  { path: '/recurring', label: 'Recurrentes', icon: RefreshCw },
   { path: '/goals', label: 'Metas', icon: Target },
   { path: '/budgets', label: 'Presupuestos', icon: Wallet },
   { path: '/couple', label: 'Pareja', icon: Heart },
@@ -33,6 +38,7 @@ const navItems = [
   { path: '/chat', label: 'Chat', icon: MessageCircle },
   { path: '/reminders', label: 'Recordatorios', icon: BellRing },
   { path: '/categories', label: 'Categorías', icon: Tags },
+  { path: '/reports', label: 'Reportes', icon: BarChart3 },
   { path: '/ai', label: 'IA', icon: Bot },
   { path: '/profile', label: 'Perfil', icon: User },
 ];

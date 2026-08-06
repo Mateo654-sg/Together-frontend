@@ -7,7 +7,7 @@ import { MoneyDisplay } from '@/shared/components/MoneyDisplay';
 import { ProgressBar } from '@/shared/components/ProgressBar';
 import { SkeletonCard } from '@/shared/components/Skeleton';
 import { ErrorState } from '@/shared/components/ErrorState';
-import { formatCurrency, formatDate, formatRelative } from '@/shared/utils/format';
+import { formatDate, formatRelative } from '@/shared/utils/format';
 
 export default function GoalDetailPage() {
   const { id } = useParams();

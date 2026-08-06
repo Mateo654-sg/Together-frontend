@@ -1,5 +1,5 @@
 import { useInfiniteQuery, type QueryKey } from '@tanstack/react-query';
-import { useState, useMemo, useCallback, type Dispatch, type SetStateAction } from 'react';
+import { useState, useMemo, type Dispatch, type SetStateAction } from 'react';
 import type { PaginatedList, PaginationParams } from '@/types/api';
 
 interface UsePaginatedQueryOptions<T> {

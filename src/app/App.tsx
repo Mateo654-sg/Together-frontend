@@ -31,7 +31,7 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     restoreSession().finally(() => setReady(true));
-  }, []);
+  }, [restoreSession]);
 
   if (!ready || isLoading) return <PageLoader />;
   return <>{children}</>;

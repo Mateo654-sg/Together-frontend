@@ -9,7 +9,7 @@ export interface PaginationParams { page?: number; limit?: number; }
 export interface LoginInput { email: string; password: string; }
 export interface RegisterInput { first_name: string; last_name: string; email: string; password: string; }
 export interface ChangePasswordInput { current_password: string; new_password: string; }
-export interface TokenResponse { access_token: string; refresh_token?: string; token_type: string; }
+export interface TokenResponse { access_token: string; refresh_token?: string; token_type: string; verification_token?: string; }
 
 // ─── User ───────────────────────────────────────────────────
 export interface User {
@@ -30,11 +30,24 @@ export interface Expense {
   description: string; notes: string | null; payment_method: string | null;
   location: string | null; attachment_url: string | null;
   expense_date: string; is_favorite: boolean; created_at: string; updated_at: string;
+  tags: Tag[];
 }
 export interface CreateExpenseInput {
   amount: number; description: string; expense_date: string;
   category_id?: string; notes?: string; payment_method?: string; location?: string;
+  tag_ids?: string[];
 }
+export interface UpdateExpenseInput extends Partial<Omit<CreateExpenseInput, 'amount' | 'description' | 'expense_date'>> {
+  amount?: number; description?: string; expense_date?: string;
+}
+
+// ─── Tags ───────────────────────────────────────────────────
+export interface Tag {
+  id: string; user_id: string; name: string; color: string | null;
+  created_at: string; updated_at: string;
+}
+export interface CreateTagInput { name: string; color?: string; }
+export interface UpdateTagInput { name?: string; color?: string; }
 
 // ─── Incomes ────────────────────────────────────────────────
 export interface Income {
@@ -45,6 +58,57 @@ export interface Income {
 export interface CreateIncomeInput {
   amount: number; description: string; income_date: string;
   category_id?: string; notes?: string;
+}
+
+// ─── Transfers ───────────────────────────────────────────────
+export interface Transfer {
+  id: string; user_id: string; from_method: string; to_method: string;
+  amount: number; description: string | null; transfer_date: string;
+  created_at: string; updated_at: string;
+}
+export interface CreateTransferInput {
+  from_method: string; to_method: string; amount: number;
+  description?: string; transfer_date: string;
+}
+export type UpdateTransferInput = Partial<CreateTransferInput>;
+
+// ─── Recurring Transactions ──────────────────────────────────
+export interface RecurringTransaction {
+  id: string; user_id: string; category_id: string | null;
+  type: 'expense' | 'income';
+  frequency: 'daily' | 'weekly' | 'monthly' | 'annual';
+  amount: number; description: string; next_execution: string;
+  last_executed: string | null; active: boolean;
+  created_at: string; updated_at: string;
+}
+export interface CreateRecurringTransactionInput {
+  type: 'expense' | 'income';
+  frequency: 'daily' | 'weekly' | 'monthly' | 'annual';
+  amount: number; description: string;
+  category_id?: string; next_execution?: string;
+}
+export interface UpdateRecurringTransactionInput extends Partial<CreateRecurringTransactionInput> {
+  active?: boolean;
+}
+export interface ProcessRecurringResponse {
+  executed: number; details: Array<Record<string, unknown>>;
+}
+
+// ─── Sessions ────────────────────────────────────────────────
+export interface SessionHistoryItem {
+  id: string; device: string | null; ip: string | null;
+  is_revoked: boolean; created_at: string; expires_at: string;
+}
+export interface SessionHistory { data: SessionHistoryItem[]; }
+
+// ─── User Statistics (GET /users/statistics) ─────────────────
+export interface UserStatistics {
+  total_income: number; total_expenses: number; balance: number;
+  total_categories_used: number; total_expenses_count: number; total_incomes_count: number;
+}
+export interface UpdateUserInput {
+  first_name?: string; last_name?: string; birth_date?: string; phone?: string;
+  language?: string; currency?: string; timezone?: string;
 }
 
 // ─── Goals ──────────────────────────────────────────────────
@@ -141,10 +205,27 @@ export interface CategoryStatistics {
   percentage_of_total: number; transaction_count: number;
 }
 export interface PersonalStatistics {
-  total_income: number; total_expenses: number; balance: number;
-  savings_rate: number; top_categories: CategoryStatistics[];
+  total_income: number; total_expense: number; balance: number;
+  savings_rate: number;
+  top_expense_categories: CategoryStatistics[];
+  top_income_categories: CategoryStatistics[];
   monthly_trend: MonthlyBreakdownItem[];
 }
+export interface CoupleStatistics {
+  personal_income: number; personal_expense: number;
+  shared_income: number; shared_expense: number;
+  total_income: number; total_expense: number;
+  balance: number; savings_rate: number;
+  partner_contribution: { [partner: string]: number };
+}
+
+// ─── Exports ───────────────────────────────────────────────
+export interface ExportRecord {
+  id: string; format: string;
+  date_from: string | null; date_to: string | null;
+  file_size: number; generated_at: string;
+}
+export interface ExportHistory { data: ExportRecord[]; pagination: PaginationInfo; }
 
 // ─── Couples ────────────────────────────────────────────────
 export interface Couple {
@@ -157,22 +238,33 @@ export interface CoupleStatusResponse { status: string; couple: Couple | null; p
 
 // ─── Shared Finance ─────────────────────────────────────────
 export interface SharedExpense {
-  id: string; amount: number; description: string; date: string;
-  category_id: string | null; paid_by: string; split_type: string;
-  created_at: string;
+  id: string; couple_id: string; category_id: string | null; paid_by: string;
+  amount: number; description: string; notes: string | null;
+  split_type: string; split_details: string | null; expense_date: string;
+  attachment_url: string | null; created_at: string; updated_at: string;
 }
-export interface CreateSharedExpenseInput { amount: number; description: string; date: string; category_id?: string; paid_by?: string; split_type?: string; }
+export interface CreateSharedExpenseInput {
+  amount: number; description: string; expense_date: string;
+  category_id?: string; notes?: string;
+  split_type?: 'equal' | 'percentage' | 'custom'; split_details?: string;
+}
 export interface SharedIncome {
-  id: string; amount: number; description: string; date: string;
-  source: string; received_by: string; split_type: string;
-  created_at: string;
+  id: string; couple_id: string; received_by: string;
+  amount: number; description: string; notes: string | null;
+  income_date: string; created_at: string;
+}
+export interface CreateSharedIncomeInput {
+  amount: number; description: string; income_date: string; notes?: string;
 }
 export interface Debt {
-  id: string; debtor_id: string; creditor_id: string; amount: number;
-  description: string; status: string; paid_at: string | null;
-  notes: string | null; created_at: string;
+  id: string; debtor_id: string; creditor_id: string;
+  shared_expense_id: string | null; amount: number;
+  status: string; description: string | null; created_at: string;
 }
-export interface DebtHistory { debts: Debt[]; total_pending: number; total_paid: number; }
+export interface CoupleBalance {
+  total_shared_expenses: number; total_shared_incomes: number; balance: number;
+  partner_one_paid: number; partner_two_paid: number;
+}
 
 // ─── AI ─────────────────────────────────────────────────────
 export interface AIChatResponse { answer: string; tokens_used: number; provider: string; }
@@ -233,6 +325,10 @@ export interface Notification {
 
 // ─── User Settings ──────────────────────────────────────────
 export interface UserSettings {
-  language: string; currency: string; notifications_enabled: boolean;
   theme: string;
+  biometric_enabled: boolean;
+  notifications_enabled: boolean;
+  reminder_enabled: boolean;
+  ai_enabled: boolean;
+  default_home_screen: string;
 }

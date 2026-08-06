@@ -1,5 +1,5 @@
 import apiClient from '@/config/api';
-import type { SharedExpense, SharedIncome, CreateSharedExpenseInput, PaginatedList, PaginationParams } from '@/types/api';
+import type { SharedExpense, SharedIncome, CreateSharedExpenseInput, CreateSharedIncomeInput, PaginatedList, PaginationParams } from '@/types/api';
 
 export const sharedExpensesApi = {
   async getAll(params?: PaginationParams & { category_id?: string; date_from?: string; date_to?: string }): Promise<PaginatedList<SharedExpense>> {
@@ -25,7 +25,7 @@ export const sharedExpensesApi = {
     const response = await apiClient.get<PaginatedList<SharedIncome>>('/shared-incomes', { params });
     return response.data;
   },
-  async createIncome(data: Omit<SharedIncome, 'id' | 'created_at'>): Promise<SharedIncome> {
+  async createIncome(data: CreateSharedIncomeInput): Promise<SharedIncome> {
     const response = await apiClient.post<SharedIncome>('/shared-incomes', data);
     return response.data;
   },

@@ -46,6 +46,10 @@ export const authApi = {
     return tokens;
   },
 
+  async verifyEmail(token: string): Promise<void> {
+    await apiClient.post('/auth/verify-email', { token });
+  },
+
   async logout(): Promise<void> {
     try {
       await apiClient.post('/auth/logout', {});

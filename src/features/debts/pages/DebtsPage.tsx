@@ -33,7 +33,7 @@ export default function DebtsPage() {
   });
 
   const copyDebtData = (debt: Debt) => {
-    const text = `Deuda: ${debt.description}\nMonto: $${debt.amount.toFixed(2)}\nEstado: ${debt.status}`;
+    const text = `Deuda: ${debt.description || 'Gasto compartido'}\nMonto: $${debt.amount.toFixed(2)}\nEstado: ${debt.status}`;
     navigator.clipboard.writeText(text).then(() => {
       toast('success', 'Datos copiados al portapapeles');
     }).catch(() => {
@@ -41,9 +41,10 @@ export default function DebtsPage() {
     });
   };
 
-  const debts = debtsData?.data || [];
-  const totalPending = balanceData?.total_pending ?? debts.filter(d => d.status === 'pending').reduce((s, d) => s + d.amount, 0);
-  const totalPaid = balanceData?.total_paid ?? debts.filter(d => d.status === 'paid').reduce((s, d) => s + d.amount, 0);
+  const debts = debtsData || [];
+  const totalPending = debts.reduce((sum: number, d: Debt) => sum + d.amount, 0);
+  const totalSharedExpenses = balanceData?.total_shared_expenses ?? 0;
+  const coupleBalance = balanceData?.balance ?? 0;
 
   return (
     <div>
@@ -59,15 +60,15 @@ export default function DebtsPage() {
           </p>
         </Card>
         <Card hover={false}>
-          <p className="summary-card__label">Total pagado</p>
-          <p className="summary-card__value" style={{ color: 'var(--color-success)' }}>
-            <MoneyDisplay amount={totalPaid} />
+          <p className="summary-card__label">Gastos compartidos</p>
+          <p className="summary-card__value">
+            <MoneyDisplay amount={totalSharedExpenses} />
           </p>
         </Card>
         <Card hover={false}>
-          <p className="summary-card__label">Balance neto</p>
-          <p className="summary-card__value" style={{ color: totalPending - totalPaid >= 0 ? 'var(--color-danger)' : 'var(--color-success)' }}>
-            <MoneyDisplay amount={totalPending - totalPaid} />
+          <p className="summary-card__label">Balance de pareja</p>
+          <p className="summary-card__value" style={{ color: coupleBalance >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
+            <MoneyDisplay amount={coupleBalance} />
           </p>
         </Card>
       </div>
@@ -89,12 +90,9 @@ export default function DebtsPage() {
             return (
               <Card key={debt.id} hover={false}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div>
-                    <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 600 }}>{debt.description}</h3>
-                    <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 'var(--space-1)' }}>
-                      {debt.notes || ''}
-                    </p>
-                  </div>
+                  <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 600 }}>
+                    {debt.description || 'Gasto compartido'}
+                  </h3>
                   <span style={{
                     padding: '2px var(--space-2)', borderRadius: 'var(--radius-full)',
                     fontSize: 'var(--text-xs)', fontWeight: 600,
@@ -106,16 +104,9 @@ export default function DebtsPage() {
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 'var(--space-3)' }}>
-                  <div>
-                    <p style={{ fontSize: 'var(--text-xl)', fontWeight: 700 }}>
-                      <MoneyDisplay amount={debt.amount} />
-                    </p>
-                    {debt.paid_at && (
-                      <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
-                        Pagada: {new Date(debt.paid_at).toLocaleDateString('es')}
-                      </p>
-                    )}
-                  </div>
+                  <p style={{ fontSize: 'var(--text-xl)', fontWeight: 700 }}>
+                    <MoneyDisplay amount={debt.amount} />
+                  </p>
                   <div style={{ display: 'flex', gap: 'var(--space-1)' }}>
                     {isPending && (
                       <button className="btn btn--primary btn--sm" onClick={() => payMutation.mutate(debt.id)} disabled={payMutation.isPending}>
@@ -127,7 +118,7 @@ export default function DebtsPage() {
                     </button>
                     {isPending && (
                       <button className="btn btn--secondary btn--sm" onClick={() => {
-                        const text = `${debt.description} $${debt.amount.toFixed(2)}`;
+                        const text = `${debt.description || 'Gasto compartido'} $${debt.amount.toFixed(2)}`;
                         navigator.clipboard.writeText(text).then(() => toast('success', 'Listo para pagar con Nequi'));
                       }}>
                         <UserPlus size={14} /> Nequi

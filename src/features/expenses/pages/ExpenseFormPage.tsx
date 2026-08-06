@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, CreditCard, Save } from 'lucide-react';
-import { expensesApi, categoriesApi } from '@/services/api';
+import { ArrowLeft, CreditCard, Save, Tags } from 'lucide-react';
+import { expensesApi, categoriesApi, tagsApi } from '@/services/api';
 import { Card } from '@/shared/components/Card';
 import { SkeletonCard } from '@/shared/components/Skeleton';
 import { ErrorState } from '@/shared/components/ErrorState';
+import type { Tag } from '@/types/api';
 
 const PAYMENT_METHODS = [
   'Efectivo',
@@ -38,10 +39,17 @@ export default function ExpenseFormPage() {
   const [notes, setNotes] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [location, setLocation] = useState('');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [newTagName, setNewTagName] = useState('');
 
   const { data: categories } = useQuery({
     queryKey: ['categories', 'expense'],
     queryFn: () => categoriesApi.getAll('expense'),
+  });
+
+  const { data: tags } = useQuery({
+    queryKey: ['tags'],
+    queryFn: () => tagsApi.getAll(),
   });
 
   const { data: existing, isLoading, isError } = useQuery({
@@ -59,8 +67,20 @@ export default function ExpenseFormPage() {
       setNotes(existing.notes || '');
       setPaymentMethod(PAYMENT_METHODS.includes(existing.payment_method as typeof PAYMENT_METHODS[number]) ? existing.payment_method || '' : '');
       setLocation(existing.location || '');
+      setSelectedTags((existing.tags ?? []).map((t: Tag) => t.id));
     }
   }, [existing]);
+
+  const toggleTag = (tagId: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tagId) ? prev.filter((t) => t !== tagId) : [...prev, tagId]
+    );
+  };
+
+  const createTagMutation = useMutation({
+    mutationFn: (name: string) => tagsApi.create({ name }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tags'] }),
+  });
 
   const mutation = useMutation({
     mutationFn: () => {
@@ -70,8 +90,9 @@ export default function ExpenseFormPage() {
         expense_date: expenseDate,
         ...(categoryId && { category_id: categoryId }),
         ...(notes && { notes }),
-          payment_method: paymentMethod,
+        payment_method: paymentMethod,
         ...(location && { location }),
+        ...(selectedTags.length > 0 && { tag_ids: selectedTags }),
       };
       return editMode
         ? expensesApi.update(id!, payload)
@@ -146,6 +167,50 @@ export default function ExpenseFormPage() {
         <div className="form-group">
           <label className="form-label">Ubicación</label>
           <input className="form-input" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Ej: Tienda" />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Etiquetas</label>
+          {tags && tags.data.length > 0 && (
+            <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', marginBottom: 'var(--space-2)' }}>
+              {tags.data.map((tag: Tag) => {
+                const active = selectedTags.includes(tag.id);
+                return (
+                  <button
+                    key={tag.id}
+                    type="button"
+                    className={`btn btn--sm ${active ? 'btn--primary' : 'btn--secondary'}`}
+                    onClick={() => toggleTag(tag.id)}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                  >
+                    <Tags size={12} />
+                    {tag.name}
+                    {active && ' ✓'}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
+            <input
+              className="form-input"
+              style={{ maxWidth: 240 }}
+              placeholder="Nombre de la etiqueta"
+              value={newTagName}
+              onChange={(e) => setNewTagName(e.target.value)}
+            />
+            <button
+              type="button"
+              className="btn btn--secondary btn--sm"
+              disabled={!newTagName.trim() || createTagMutation.isPending}
+              onClick={() => {
+                createTagMutation.mutate(newTagName.trim(), {
+                  onSuccess: () => setNewTagName(''),
+                });
+              }}
+            >
+              <Tags size={14} /> {createTagMutation.isPending ? 'Creando...' : 'Crear etiqueta'}
+            </button>
+          </div>
         </div>
         <div className="form-group">
           <label className="form-label">Notas</label>

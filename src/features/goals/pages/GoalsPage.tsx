@@ -48,7 +48,7 @@ export default function GoalsPage() {
     queryFn: () => expensesApi.getBalance(),
   });
 
-  const goals: Goal[] = data?.data ?? [];
+  const goals = useMemo<Goal[]>(() => data?.data ?? [], [data]);
   const availableBalance = balanceData?.balance ?? 0;
 
   const filtered = useMemo(() => {
