@@ -44,6 +44,12 @@ export const tokenStorage = {
   setAccessToken(token: string): void {
     tokenStore.set(token);
   },
+  getRefreshToken(): string | null {
+    return tokenStore.getRefresh();
+  },
+  setRefreshToken(token: string): void {
+    tokenStore.setRefresh(token);
+  },
   clearTokens(): void {
     tokenStore.clear();
   },
@@ -117,19 +123,24 @@ apiClient.interceptors.response.use(
     isRefreshing = true;
 
     try {
+      const refreshToken = tokenStorage.getRefreshToken();
       const refreshResponse = await axios.post<{
         access_token: string;
+        refresh_token?: string;
       }>(
         `${API_BASE_URL}/auth/refresh`,
-        {},
+        refreshToken ? { refresh_token: refreshToken } : {},
         {
           headers: { 'Content-Type': 'application/json' },
           withCredentials: true,
         }
       );
 
-      const { access_token } = refreshResponse.data;
+      const { access_token, refresh_token } = refreshResponse.data;
       tokenStorage.setAccessToken(access_token);
+      if (refresh_token) {
+        tokenStorage.setRefreshToken(refresh_token);
+      }
       processQueue(null, access_token);
 
       if (originalRequest.headers) {
