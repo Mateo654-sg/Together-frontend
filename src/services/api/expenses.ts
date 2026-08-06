@@ -3,8 +3,6 @@ import type { Expense, CreateExpenseInput, PaginatedList, PaginationParams } fro
 
 export interface BalanceResponse {
   balance: number;
-  income: number;
-  expense: number;
 }
 
 export const expensesApi = {

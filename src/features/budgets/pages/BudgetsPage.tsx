@@ -10,6 +10,7 @@ import { EmptyState } from '@/shared/components/EmptyState';
 import { useToast } from '@/shared/components/Toast';
 import { ProgressBar } from '@/shared/components/ProgressBar';
 import { MoneyDisplay } from '@/shared/components/MoneyDisplay';
+import { toFiniteNumber } from '@/shared/utils/format';
 import type { Budget } from '@/types/api';
 
 const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -89,7 +90,7 @@ export default function BudgetsPage() {
                 display: 'flex', justifyContent: 'space-between',
                 padding: 'var(--space-1) 0', fontSize: 'var(--text-sm)',
               }}>
-                <span>Has consumido el {Math.round(a.percentage)}% (${a.spent.toFixed(2)} de ${a.amount.toFixed(2)})</span>
+                <span>Has consumido el {Math.round(a.percentage)}% (${toFiniteNumber(a.spent).toFixed(2)} de ${toFiniteNumber(a.amount).toFixed(2)})</span>
                 <span style={{ fontWeight: 600, color: a.percentage >= 100 ? 'var(--color-danger)' : 'var(--color-warning)' }}>
                   {a.percentage >= 100 ? 'Excedido' : `${Math.round(a.percentage)}%`}
                 </span>

@@ -2,6 +2,14 @@ import { create } from 'zustand';
 import { authApi, usersApi, tokenStorage } from '@/services/api';
 import type { LoginInput, RegisterInput, User } from '@/types/api';
 
+let pendingVerificationToken: string | null = null;
+
+export function consumeVerificationToken(): string | null {
+  const token = pendingVerificationToken;
+  pendingVerificationToken = null;
+  return token;
+}
+
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
@@ -51,7 +59,20 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   googleLogin: (idToken) => handleAuthLogin(set, authApi.googleLogin(idToken), 'Google login failed'),
 
-  register: (input) => handleAuthLogin(set, authApi.register(input), 'Registration failed'),
+  register: async (input) => {
+    set({ isLoading: true, error: null });
+    try {
+      const tokens = await authApi.register(input);
+      if (tokens?.verification_token) {
+        pendingVerificationToken = tokens.verification_token;
+      }
+      set({ isLoading: false, isAuthenticated: false });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Registration failed';
+      set({ isLoading: false, error: message });
+      throw error;
+    }
+  },
 
   logout: async () => {
     set({ isLoading: true, error: null });

@@ -32,7 +32,7 @@ export default function ChatPage() {
 
   const { data: messagesData, isLoading } = useQuery({
     queryKey: ['chat', partnerId],
-    queryFn: () => chatApi.getAll({ receiver_id: partnerId }),
+    queryFn: () => chatApi.getAll({ partner_id: partnerId }),
     enabled: Boolean(partnerId),
     refetchInterval: 5000,
   });

@@ -7,6 +7,7 @@ import { ErrorState } from '@/shared/components/ErrorState';
 import { EmptyState } from '@/shared/components/EmptyState';
 import { useToast } from '@/shared/components/Toast';
 import { MoneyDisplay } from '@/shared/components/MoneyDisplay';
+import { toFiniteNumber } from '@/shared/utils/format';
 import type { Debt } from '@/types/api';
 
 export default function DebtsPage() {
@@ -33,7 +34,7 @@ export default function DebtsPage() {
   });
 
   const copyDebtData = (debt: Debt) => {
-    const text = `Deuda: ${debt.description || 'Gasto compartido'}\nMonto: $${debt.amount.toFixed(2)}\nEstado: ${debt.status}`;
+    const text = `Deuda: ${debt.description || 'Gasto compartido'}\nMonto: $${toFiniteNumber(debt.amount).toFixed(2)}\nEstado: ${debt.status}`;
     navigator.clipboard.writeText(text).then(() => {
       toast('success', 'Datos copiados al portapapeles');
     }).catch(() => {
@@ -42,7 +43,7 @@ export default function DebtsPage() {
   };
 
   const debts = debtsData || [];
-  const totalPending = debts.reduce((sum: number, d: Debt) => sum + d.amount, 0);
+  const totalPending = debts.reduce((sum: number, d: Debt) => sum + toFiniteNumber(d.amount), 0);
   const totalSharedExpenses = balanceData?.total_shared_expenses ?? 0;
   const coupleBalance = balanceData?.balance ?? 0;
 
@@ -118,7 +119,7 @@ export default function DebtsPage() {
                     </button>
                     {isPending && (
                       <button className="btn btn--secondary btn--sm" onClick={() => {
-                        const text = `${debt.description || 'Gasto compartido'} $${debt.amount.toFixed(2)}`;
+                        const text = `${debt.description || 'Gasto compartido'} $${toFiniteNumber(debt.amount).toFixed(2)}`;
                         navigator.clipboard.writeText(text).then(() => toast('success', 'Listo para pagar con Nequi'));
                       }}>
                         <UserPlus size={14} /> Nequi

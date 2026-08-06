@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, UserPlus, Heart } from 'lucide-react';
-import { useAuthStore } from '@/features/auth/store/auth-store';
+import { Eye, EyeOff, UserPlus, Heart, MailCheck } from 'lucide-react';
+import { useAuthStore, consumeVerificationToken } from '@/features/auth/store/auth-store';
+import { authApi } from '@/services/api';
 import GoogleSignInButton from '@/features/auth/components/GoogleSignInButton';
 
 export default function RegisterPage() {
@@ -13,6 +14,8 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [localError, setLocalError] = useState('');
+  const [registered, setRegistered] = useState(false);
+  const [verifying, setVerifying] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,12 +35,60 @@ export default function RegisterPage() {
         email: email.trim(),
         password,
       });
-      navigate('/dashboard');
+      setRegistered(true);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Error al registrarse';
       setLocalError(message);
     }
   };
+
+  const handleVerify = async () => {
+    const token = consumeVerificationToken();
+    if (!token) { navigate('/login'); return; }
+    setVerifying(true);
+    try {
+      await authApi.verifyEmail(token);
+      navigate('/login');
+    } catch {
+      setLocalError('No se pudo verificar el correo. Intenta de nuevo o inicia sesión.');
+      setVerifying(false);
+    }
+  };
+
+  if (registered) {
+    return (
+      <div className="auth-page">
+        <div className="auth-card">
+          <div className="auth-header">
+            <div className="auth-logo">
+              <MailCheck size={24} />
+            </div>
+            <h1 className="auth-title">¡Cuenta creada!</h1>
+            <p className="auth-subtitle">
+              Enviamos un correo de verificación a <strong>{email}</strong>. Abre el enlace
+              para activar tu cuenta.
+            </p>
+          </div>
+
+          {localError && <div className="alert alert--error">{localError}</div>}
+
+          <button
+            className="btn btn--primary btn--full"
+            onClick={handleVerify}
+            disabled={verifying}
+            style={{ marginTop: 'var(--space-4)' }}
+          >
+            {verifying ? <span className="btn__loader" /> : <><MailCheck size={18} /> Ya verifiqué mi correo</>}
+          </button>
+
+          <p className="auth-footer">
+            ¿Ya verificaste?{' '}
+            <Link to="/login" className="auth-link">Inicia sesión</Link>
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="auth-page">

@@ -2,7 +2,7 @@ import apiClient from '@/config/api';
 import type { ChatMessage, PaginatedList, PaginationParams } from '@/types/api';
 
 export const chatApi = {
-  async getAll(params?: PaginationParams & { receiver_id?: string }): Promise<PaginatedList<ChatMessage>> {
+  async getAll(params?: PaginationParams & { partner_id?: string }): Promise<PaginatedList<ChatMessage>> {
     const response = await apiClient.get<PaginatedList<ChatMessage>>('/chat', { params });
     return response.data;
   },
