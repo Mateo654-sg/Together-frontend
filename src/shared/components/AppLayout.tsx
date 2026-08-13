@@ -1,50 +1,16 @@
 import { useState } from 'react';
 import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
 import {
-  LayoutDashboard,
-  ArrowLeftRight,
-  Target,
-  Bot,
-  User,
-  Bell,
   Menu,
   X,
   LogOut,
-  Heart,
-  Wallet,
-  BellRing,
-  Tags,
-  Users,
-  DollarSign,
-  CalendarDays,
-  MessageCircle,
-  BarChart3,
-  Repeat,
-  RefreshCw,
+  Bell,
 } from 'lucide-react';
 import { useAuthStore } from '@/features/auth/store/auth-store';
 import { OfflineBanner } from '@/pwa/OfflineBanner';
 import { InstallButton } from '@/pwa/InstallButton';
 import { InstallPromptBanner } from '@/pwa/InstallPromptBanner';
-
-const navItems = [
-  { path: '/dashboard', label: 'Inicio', icon: LayoutDashboard },
-  { path: '/activity', label: 'Actividad', icon: ArrowLeftRight },
-  { path: '/transfers', label: 'Transferencias', icon: Repeat },
-  { path: '/recurring', label: 'Recurrentes', icon: RefreshCw },
-  { path: '/goals', label: 'Metas', icon: Target },
-  { path: '/budgets', label: 'Presupuestos', icon: Wallet },
-  { path: '/couple', label: 'Pareja', icon: Heart },
-  { path: '/shared-finance', label: 'Shared Fin.', icon: Users },
-  { path: '/debts', label: 'Deudas', icon: DollarSign },
-  { path: '/calendar', label: 'Calendario', icon: CalendarDays },
-  { path: '/chat', label: 'Chat', icon: MessageCircle },
-  { path: '/reminders', label: 'Recordatorios', icon: BellRing },
-  { path: '/categories', label: 'Categorías', icon: Tags },
-  { path: '/reports', label: 'Reportes', icon: BarChart3 },
-  { path: '/ai', label: 'IA', icon: Bot },
-  { path: '/profile', label: 'Perfil', icon: User },
-];
+import { navItems, bottomNavItems } from '@/shared/navigation';
 
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -135,9 +101,9 @@ export function AppLayout() {
         </main>
       </div>
 
-      {/* Bottom nav (mobile) */}
-      <nav className="bottom-nav">
-        {navItems.map((item) => {
+      {/* Bottom nav (mobile) — solo "Inicio" por diseño, igual en todas las plataformas */}
+      <nav className="bottom-nav" aria-label="Navegación principal">
+        {bottomNavItems.map((item) => {
           const isActive = location.pathname.startsWith(item.path);
           const Icon = item.icon;
           return (
