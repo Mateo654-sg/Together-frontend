@@ -1,4 +1,13 @@
 {
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Cross-Origin-Opener-Policy", "value": "same-origin-allow-popups" },
+        { "key": "Cross-Origin-Embedder-Policy", "value": "unsafe-none" }
+      ]
+    }
+  ],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "https://together-backend-bbk9.onrender.com/api/$1" },
     { "source": "/((?!.*\\..*).*)", "destination": "/index.html" }
