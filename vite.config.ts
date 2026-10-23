@@ -74,9 +74,17 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-icons': ['lucide-react'],
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+        manualChunks(id) {
+          if (id.includes('lucide-react')) return 'vendor-icons';
+          if (
+            id.includes('/node_modules/react/') ||
+            id.includes('/node_modules/react-dom/') ||
+            id.includes('/node_modules/react-router') ||
+            id.includes('\\node_modules\\react\\') ||
+            id.includes('\\node_modules\\react-dom\\') ||
+            id.includes('\\node_modules\\react-router')
+          ) return 'vendor-react';
+          if (id.includes('/src/shared/') || id.includes('\\src\\shared\\')) return 'vendor-shared';
         },
       },
     },
