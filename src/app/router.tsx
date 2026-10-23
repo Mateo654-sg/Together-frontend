@@ -1,3 +1,16 @@
+/**
+ * @module router
+ * @description Enrutador principal de Together con carga diferida (lazy) por página.
+ *
+ * Guardas de ruta:
+ * - `RequireAuth`: redirige a /login si no hay sesión activa.
+ * - `RequireGuest`: redirige a /dashboard si ya hay sesión (evita acceder al
+ *   login/registro estando autenticado).
+ *
+ * Todas las páginas se cargan con `lazy()` + `Suspense` para reducir el bundle
+ * inicial y mejorar el LCP (Largest Contentful Paint).
+ */
+
 import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAuthStore } from '@/features/auth/store/auth-store';

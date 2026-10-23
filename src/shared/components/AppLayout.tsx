@@ -1,3 +1,18 @@
+/**
+ * @module AppLayout
+ * @description Shell principal de la aplicación autenticada.
+ *
+ * Estructura:
+ * - Sidebar fijo en desktop (≥769 px) con navegación principal.
+ * - Topbar sticky con botón de menú (mobile), notificaciones y avatar.
+ * - Bottom nav fija en mobile (≤768 px) con los 5 ítems más frecuentes.
+ * - Área de contenido (`<main>`) con `id="main-content"` para el skip-link.
+ * - Banners de estado: OfflineBanner (sin red) e InstallPromptBanner (PWA).
+ *
+ * Responsive: el sidebar se oculta bajo 768 px y se abre via overlay con
+ * el botón de menú del topbar o cerrándose al hacer clic en el overlay.
+ */
+
 import { useState } from 'react';
 import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
 import {
@@ -25,7 +40,8 @@ export function AppLayout() {
 
   return (
     <div className="app-layout">
-      {/*<a href="#main-content" className="skip-link">Saltar al contenido principal</a>*/}
+      {/* Skip-link de accesibilidad: visible sólo al recibir foco con teclado */}
+      <a href="#main-content" className="skip-link">Saltar al contenido principal</a>
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />

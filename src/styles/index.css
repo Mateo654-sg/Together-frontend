@@ -228,6 +228,22 @@ a:hover { color: var(--color-brand-300); }
 
 ::selection { background: hsla(330, 100%, 56%, 0.3); color: var(--color-text-primary); }
 
+/* ── Skip-link (accesibilidad por teclado) ────────────────── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: var(--space-4);
+  background: var(--color-brand-600);
+  color: white;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  z-index: calc(var(--z-toast) + 1);
+  transition: top var(--transition-fast);
+}
+.skip-link:focus { top: var(--space-4); }
+
 /* ── Utilidades ───────────────────────────────────────────── */
 .gradient-text {
   background: var(--gradient-brand);

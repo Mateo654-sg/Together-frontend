@@ -1,6 +1,23 @@
 /**
  * @module api/client
- * @description Cliente HTTP (Axios) con interceptores JWT, refresh automático vía cookie HttpOnly y cola de reintentos.
+ * @description Cliente HTTP (Axios) con seguridad JWT y renovación automática de tokens.
+ *
+ * Arquitectura de seguridad:
+ * - Access token: cabecera `Authorization: Bearer <token>` — en memoria (tokenStore).
+ * - Refresh token: cookie HttpOnly (mismo origen) — nunca legible desde JS.
+ *
+ * Flujo de renovación automática (interceptor de respuesta):
+ * 1. Petición falla con 401 y no es un endpoint de auth.
+ * 2. Si ya hay un refresh en curso, la petición se encola (`failedQueue`).
+ * 3. Se llama a `POST /auth/refresh`; el refresh token viaja automáticamente
+ *    en la cookie HttpOnly.
+ * 4. Con el nuevo access token se reintentan todas las peticiones de la cola.
+ * 5. Si el refresh falla, se vacía la cola con error y se invoca `_onLogout`
+ *    para redirigir al login.
+ *
+ * Modo offline:
+ * - Si el error es `ERR_NETWORK` (sin conexión), se lanza un error tipado con
+ *   `status: 0` que la PWA intercepta para encolar la operación.
  */
 
 import axios, {

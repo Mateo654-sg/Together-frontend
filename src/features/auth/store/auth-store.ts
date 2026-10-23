@@ -1,8 +1,32 @@
+/**
+ * @module auth-store
+ * @description Store global de autenticación con Zustand.
+ *
+ * Flujo de tokens:
+ * - Access token: guardado en memoria (tokenStore) — nunca en localStorage
+ *   para evitar ataques XSS.
+ * - Refresh token: viaja en cookie HttpOnly del mismo origen. El backend lo
+ *   rota en cada uso (Refresh Token Rotation) e invalida el anterior.
+ *
+ * Ciclo de vida de sesión:
+ * 1. `restoreSession()` se llama al montar App — intenta renovar el access
+ *    token con el refresh token existente en la cookie.
+ * 2. El interceptor de Axios llama automáticamente a `/auth/refresh` ante un
+ *    401 y, si falla, invoca el callback de logout registrado en `setLogoutCallback`.
+ * 3. `logout()` borra el token en memoria, llama a `/auth/logout` para
+ *    invalidar el refresh token en el servidor y limpia los cachés de la PWA.
+ */
+
 import { create } from 'zustand';
 import { authApi, usersApi, tokenStorage } from '@/services/api';
 import { clearApiCaches } from '@/pwa/syncBridge';
 import type { LoginInput, RegisterInput, User } from '@/types/api';
 
+/**
+ * Token de verificación de email generado por el backend en el registro.
+ * Se almacena de forma efímera en módulo (no en store) para evitar exponerlo
+ * en DevTools y pasarlo una sola vez a VerifyEmailPage via `consumeVerificationToken`.
+ */
 let pendingVerificationToken: string | null = null;
 
 export function consumeVerificationToken(): string | null {
