@@ -3,21 +3,22 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store/auth-store';
 import { Card } from '@/shared/components/Card';
 import { ErrorState } from '@/shared/components/ErrorState';
-import { ArrowLeft, Save, Download, Trash2, Smartphone, Monitor, LogOut } from 'lucide-react';
+import {
+  ArrowLeft, Save, Download, Trash2, Smartphone, Monitor,
+  LogOut, ChevronLeft, ChevronRight, Bell, BellOff, Sun, Moon, Laptop,
+  ShieldAlert,
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/shared/components/Toast';
 import { usersApi } from '@/services/api';
 import { requestNotificationPermission, showLocalNotification, notificationsSupported, vibrate } from '@/pwa/device';
 import type { SessionHistoryItem } from '@/types/api';
 
-const currencies = ['COP', 'USD', 'EUR', 'MXN', 'ARS', 'CLP', 'PEN', 'BRL'];
-const languages = ['es', 'en'];
+const SESSIONS_PER_PAGE = 4;
 
 export default function SettingsPage() {
   const { user, setUser } = useAuthStore();
   const navigate = useNavigate();
-  const [currency, setCurrency] = useState('COP');
-  const [language, setLanguage] = useState('es');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [theme, setTheme] = useState(() =>
     document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark'
@@ -26,20 +27,17 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [sessionsPage, setSessionsPage] = useState(0);
 
   useEffect(() => {
-    setCurrency(user?.currency || 'COP');
-    setLanguage(user?.language || 'es');
     usersApi.getSettings()
       .then((settings) => {
         setNotificationsEnabled(settings.notifications_enabled ?? true);
-        setTheme(settings.theme || 'light');
+        setTheme(settings.theme || 'dark');
       })
-      .catch(() => {
-        // La configuración podría no existir aún; usamos defaults.
-      })
+      .catch(() => {})
       .finally(() => setLoading(false));
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-color-scheme: light)');
@@ -59,10 +57,10 @@ export default function SettingsPage() {
     setError(false);
     try {
       await Promise.all([
-        usersApi.updateMe({ currency, language }),
+        usersApi.updateMe({ currency: 'COP', language: 'es' }),
         usersApi.updateSettings({ theme, notifications_enabled: notificationsEnabled }),
       ]);
-      if (user) setUser({ ...user, currency, language });
+      if (user) setUser({ ...user, currency: 'COP', language: 'es' });
     } catch {
       setError(true);
     } finally {
@@ -78,23 +76,27 @@ export default function SettingsPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const refreshSessions = () => queryClient.invalidateQueries({ queryKey: ['user-sessions'] });
+  const allSessions = sessionsData?.data ?? [];
+  const totalPages = Math.ceil(allSessions.length / SESSIONS_PER_PAGE);
+  const pagedSessions = allSessions.slice(
+    sessionsPage * SESSIONS_PER_PAGE,
+    (sessionsPage + 1) * SESSIONS_PER_PAGE,
+  );
+
+  const refreshSessions = () => {
+    queryClient.invalidateQueries({ queryKey: ['user-sessions'] });
+    setSessionsPage(0);
+  };
 
   const revokeSessionMutation = useMutation({
     mutationFn: (sessionId: string) => usersApi.revokeSession(sessionId),
-    onSuccess: () => {
-      refreshSessions();
-      toast('success', 'Sesión revocada correctamente.');
-    },
+    onSuccess: () => { refreshSessions(); toast('success', 'Sesión revocada correctamente.'); },
     onError: () => toast('error', 'No se pudo revocar la sesión.'),
   });
 
   const revokeAllMutation = useMutation({
     mutationFn: () => usersApi.revokeAllSessions(),
-    onSuccess: () => {
-      refreshSessions();
-      toast('success', 'Sesión cerrada en los demás dispositivos.');
-    },
+    onSuccess: () => { refreshSessions(); toast('success', 'Sesiones cerradas en otros dispositivos.'); },
     onError: () => toast('error', 'No se pudo cerrar las demás sesiones.'),
   });
 
@@ -105,6 +107,12 @@ export default function SettingsPage() {
     </div>
   );
 
+  const themeOptions = [
+    { key: 'light', label: 'Claro', icon: Sun },
+    { key: 'dark', label: 'Oscuro', icon: Moon },
+    { key: 'system', label: 'Sistema', icon: Laptop },
+  ];
+
   return (
     <div>
       <div className="dashboard-header">
@@ -112,107 +120,125 @@ export default function SettingsPage() {
           <ArrowLeft size={16} /> Volver
         </button>
         <button className="btn btn--primary btn--sm" onClick={handleSave} disabled={saving}>
-          <Save size={14} /> {saving ? 'Guardando...' : 'Guardar'}
+          <Save size={14} /> {saving ? 'Guardando...' : 'Guardar cambios'}
         </button>
       </div>
 
       {error && <ErrorState message="Error al guardar configuración" />}
 
-      <Card hover={false}>
-        <div className="form-group">
-          <label className="form-label">Moneda</label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
-            {currencies.map((c) => (
-              <button
-                key={c}
-                className={`btn btn--sm ${currency === c ? 'btn--primary' : 'btn--secondary'}`}
-                onClick={() => setCurrency(c)}
-              >
-                {c}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="form-group">
-          <label className="form-label">Idioma</label>
-          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-            {languages.map((l) => (
-              <button
-                key={l}
-                className={`btn btn--sm ${language === l ? 'btn--primary' : 'btn--secondary'}`}
-                onClick={() => setLanguage(l)}
-              >
-                {l === 'es' ? 'Español' : 'English'}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="form-group">
-          <label className="form-label">Tema</label>
-          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-            {['light', 'dark', 'system'].map((t) => (
-              <button
-                key={t}
-                className={`btn btn--sm ${theme === t ? 'btn--primary' : 'btn--secondary'}`}
-                onClick={() => setTheme(t)}
-              >
-                {t === 'light' ? 'Claro' : t === 'dark' ? 'Oscuro' : 'Sistema'}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="form-group">
-          <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-            <input
-              type="checkbox"
-              checked={notificationsEnabled}
-              onChange={async (e) => {
-                const enabled = e.target.checked;
-                setNotificationsEnabled(enabled);
-                if (enabled && notificationsSupported()) {
-                  const permission = await requestNotificationPermission();
-                  if (permission !== 'granted') {
-                    toast('warning', 'Permiso de notificaciones denegado en el dispositivo.');
-                    setNotificationsEnabled(false);
-                  }
-                }
-              }}
-            />
-            Notificaciones activadas
-          </label>
-          {notificationsSupported() && (
+      {/* Apariencia */}
+      <Card hover={false} style={{ marginBottom: 'var(--space-4)' }}>
+        <h3 style={{ marginBottom: 'var(--space-4)', fontSize: 'var(--text-base)', fontWeight: 600 }}>
+          Apariencia
+        </h3>
+        <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+          {themeOptions.map(({ key, label, icon: Icon }) => (
             <button
-              type="button"
-              className="btn btn--secondary btn--sm"
-              style={{ marginTop: 'var(--space-2)' }}
-              onClick={async () => {
-                if (Notification.permission !== 'granted') {
-                  const permission = await requestNotificationPermission();
-                  if (permission !== 'granted') {
-                    toast('warning', 'Activa el permiso de notificaciones en tu navegador.');
-                    return;
-                  }
-                }
-                vibrate([60, 40, 60]);
-                showLocalNotification('Together', {
-                  body: 'Las notificaciones del dispositivo funcionan correctamente.',
-                  icon: '/icons/pwa-192x192.png',
-                  badge: '/icons/pwa-192x192.png',
-                });
-                toast('success', 'Notificación de prueba enviada.');
+              key={key}
+              onClick={() => setTheme(key)}
+              style={{
+                flex: 1, minWidth: 100,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-2)',
+                padding: 'var(--space-4) var(--space-3)',
+                borderRadius: 'var(--radius-xl)',
+                border: theme === key
+                  ? '2px solid var(--color-brand-500)'
+                  : '2px solid var(--color-border-subtle)',
+                background: theme === key ? 'var(--color-brand-dim)' : 'var(--color-bg-elevated)',
+                color: theme === key ? 'var(--color-brand-400)' : 'var(--color-text-secondary)',
+                cursor: 'pointer', transition: 'all var(--transition-fast)',
               }}
             >
-              Probar notificación
+              <Icon size={20} />
+              <span style={{ fontSize: 'var(--text-sm)', fontWeight: 500 }}>{label}</span>
             </button>
-          )}
+          ))}
         </div>
       </Card>
 
-      <div className="card" style={{ marginTop: 'var(--space-4)' }}>
-        <h3 style={{ marginBottom: 'var(--space-3)' }}>Datos</h3>
+      {/* Notificaciones */}
+      <Card hover={false} style={{ marginBottom: 'var(--space-4)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
+          <div>
+            <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 600 }}>Notificaciones</h3>
+            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginTop: 2 }}>
+              {notificationsEnabled ? 'Las alertas y recordatorios están activos.' : 'Las notificaciones están desactivadas.'}
+            </p>
+          </div>
+          <button
+            onClick={async () => {
+              const next = !notificationsEnabled;
+              if (next && notificationsSupported()) {
+                const permission = await requestNotificationPermission();
+                if (permission !== 'granted') {
+                  toast('warning', 'Activa el permiso de notificaciones en tu navegador.');
+                  return;
+                }
+              }
+              setNotificationsEnabled(next);
+            }}
+            style={{
+              width: 48, height: 26,
+              borderRadius: 'var(--radius-full)',
+              background: notificationsEnabled ? 'var(--color-brand-500)' : 'var(--color-border-strong)',
+              border: 'none', cursor: 'pointer',
+              position: 'relative', transition: 'background var(--transition-fast)', flexShrink: 0,
+            }}
+            role="switch"
+            aria-checked={notificationsEnabled}
+          >
+            <span style={{
+              position: 'absolute', top: 3,
+              left: notificationsEnabled ? 25 : 3,
+              width: 20, height: 20,
+              borderRadius: '50%', background: 'white',
+              transition: 'left var(--transition-fast)',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+            }} />
+          </button>
+        </div>
+
+        {notificationsSupported() && notificationsEnabled && (
+          <button
+            type="button"
+            className="btn btn--secondary btn--sm"
+            onClick={async () => {
+              if (Notification.permission !== 'granted') {
+                const permission = await requestNotificationPermission();
+                if (permission !== 'granted') {
+                  toast('warning', 'Activa el permiso de notificaciones en tu navegador.');
+                  return;
+                }
+              }
+              vibrate([60, 40, 60]);
+              showLocalNotification('Together', {
+                body: 'Las notificaciones del dispositivo funcionan correctamente.',
+                icon: '/icons/pwa-192x192.png',
+                badge: '/icons/pwa-192x192.png',
+              });
+              toast('success', 'Notificación de prueba enviada.');
+            }}
+          >
+            <Bell size={14} /> Enviar notificación de prueba
+          </button>
+        )}
+
+        {!notificationsEnabled && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
+            padding: 'var(--space-3)', borderRadius: 'var(--radius-lg)',
+            background: 'var(--color-warning-dim)', color: 'var(--color-warning)',
+            fontSize: 'var(--text-sm)',
+          }}>
+            <BellOff size={14} />
+            No recibirás alertas de recordatorios ni presupuestos.
+          </div>
+        )}
+      </Card>
+
+      {/* Datos */}
+      <Card hover={false} style={{ marginBottom: 'var(--space-4)' }}>
+        <h3 style={{ marginBottom: 'var(--space-3)', fontSize: 'var(--text-base)', fontWeight: 600 }}>Mis datos</h3>
         <button
           className="btn btn--secondary"
           onClick={async () => {
@@ -235,12 +261,141 @@ export default function SettingsPage() {
         >
           <Download size={16} /> {exporting ? 'Exportando...' : 'Exportar mis datos'}
         </button>
+      </Card>
 
-        <hr style={{ margin: 'var(--space-4) 0', border: 'none', borderTop: '1px solid var(--color-border-subtle)' }} />
+      {/* Sesiones */}
+      <Card hover={false} style={{ marginBottom: 'var(--space-4)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)' }}>
+          <div>
+            <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 600 }}>Sesiones activas</h3>
+            {allSessions.length > 0 && (
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 2 }}>
+                {allSessions.length} {allSessions.length === 1 ? 'dispositivo' : 'dispositivos'} registrados
+              </p>
+            )}
+          </div>
+          <button
+            className="btn btn--danger btn--sm"
+            onClick={() => revokeAllMutation.mutate()}
+            disabled={revokeAllMutation.isPending || allSessions.length === 0}
+          >
+            <LogOut size={14} /> Cerrar otras sesiones
+          </button>
+        </div>
 
-        <h3 style={{ marginBottom: 'var(--space-3)', color: 'var(--color-danger)' }}>Zona de peligro</h3>
+        {allSessions.length === 0 ? (
+          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
+            No hay sesiones registradas.
+          </p>
+        ) : (
+          <>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+              {pagedSessions.map((session: SessionHistoryItem) => {
+                const isMobile = session.device && /mobile|android|iphone|tablet/i.test(session.device);
+                return (
+                  <div
+                    key={session.id}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
+                      padding: 'var(--space-3)', borderRadius: 'var(--radius-lg)',
+                      background: 'var(--color-bg-elevated)',
+                      border: '1px solid var(--color-border-subtle)',
+                    }}
+                  >
+                    <div style={{
+                      width: 38, height: 38, borderRadius: 'var(--radius-md)',
+                      background: 'var(--color-bg-overlay)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0, color: 'var(--color-text-secondary)',
+                    }}>
+                      {isMobile ? <Smartphone size={16} /> : <Monitor size={16} />}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--color-text-primary)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                        {session.device || 'Dispositivo desconocido'}
+                        {session.is_revoked && (
+                          <span style={{
+                            fontSize: 'var(--text-xs)', padding: '1px 6px',
+                            borderRadius: 'var(--radius-full)',
+                            background: 'var(--color-danger-dim)', color: 'var(--color-danger)',
+                            fontWeight: 600,
+                          }}>Revocada</span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 2 }}>
+                        {session.ip ? `${session.ip} · ` : ''}
+                        {new Date(session.created_at).toLocaleString('es', { dateStyle: 'medium', timeStyle: 'short' })}
+                      </div>
+                    </div>
+                    {!session.is_revoked && (
+                      <button
+                        className="btn btn--ghost btn--sm"
+                        onClick={() => revokeSessionMutation.mutate(session.id)}
+                        disabled={revokeSessionMutation.isPending}
+                        title="Cerrar esta sesión"
+                        style={{ color: 'var(--color-danger)', flexShrink: 0 }}
+                      >
+                        <LogOut size={14} />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {totalPages > 1 && (
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                marginTop: 'var(--space-3)', paddingTop: 'var(--space-3)',
+                borderTop: '1px solid var(--color-border-subtle)',
+              }}>
+                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
+                  {sessionsPage + 1} / {totalPages}
+                </span>
+                <div style={{ display: 'flex', gap: 'var(--space-1)' }}>
+                  <button
+                    className="btn btn--ghost btn--sm"
+                    onClick={() => setSessionsPage(p => Math.max(0, p - 1))}
+                    disabled={sessionsPage === 0}
+                  >
+                    <ChevronLeft size={14} />
+                  </button>
+                  <button
+                    className="btn btn--ghost btn--sm"
+                    onClick={() => setSessionsPage(p => Math.min(totalPages - 1, p + 1))}
+                    disabled={sessionsPage >= totalPages - 1}
+                  >
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </Card>
+
+      {/* Zona de peligro */}
+      <Card hover={false}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 'var(--radius-md)',
+            background: 'var(--color-danger-dim)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'var(--color-danger)', flexShrink: 0,
+          }}>
+            <ShieldAlert size={18} />
+          </div>
+          <div>
+            <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--color-danger)' }}>
+              Zona de peligro
+            </h3>
+            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginTop: 2 }}>
+              Esta acción es permanente e irreversible.
+            </p>
+          </div>
+        </div>
         <button
-          className="btn btn--danger"
+          className="btn btn--danger btn--sm"
           onClick={() => {
             const password = prompt('Ingresa tu contraseña para confirmar la eliminación de tu cuenta:');
             if (password) {
@@ -252,57 +407,9 @@ export default function SettingsPage() {
             }
           }}
         >
-          <Trash2 size={16} /> Eliminar mi cuenta
+          <Trash2 size={14} /> Eliminar mi cuenta
         </button>
-      </div>
-
-      <div className="card" style={{ marginTop: 'var(--space-4)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
-          <h3>Sesiones</h3>
-          <button
-            className="button button--ghost"
-            onClick={() => revokeAllMutation.mutate()}
-            disabled={revokeAllMutation.isPending || (sessionsData?.data ?? []).length === 0}
-          >
-            <LogOut size={14} /> Cerrar en otros dispositivos
-          </button>
-        </div>
-        {(sessionsData?.data ?? []).length === 0 ? (
-          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>No hay sesiones registradas.</p>
-        ) : (
-          <div className="activity-list">
-            {(sessionsData?.data ?? []).map((session: SessionHistoryItem) => (
-              <div key={session.id} className="activity-item">
-                <div className="activity-item__emoji" aria-hidden="true">
-                  {session.device && /mobile|android|iphone|tablet/i.test(session.device)
-                    ? <Smartphone size={16} />
-                    : <Monitor size={16} />}
-                </div>
-                <div className="activity-item__info">
-                  <div className="activity-item__title">
-                    {session.device || 'Dispositivo desconocido'}
-                    {session.is_revoked && <span style={{ color: 'var(--color-danger)' }}> · Revocada</span>}
-                  </div>
-                  <div className="activity-item__date">
-                    {session.ip ? `${session.ip} · ` : ''}Iniciada {new Date(session.created_at).toLocaleString('es')}
-                  </div>
-                </div>
-                {!session.is_revoked && (
-                  <button
-                    className="button button--ghost"
-                    style={{ padding: 'var(--space-1) var(--space-2)', fontSize: 'var(--text-sm)' }}
-                    onClick={() => revokeSessionMutation.mutate(session.id)}
-                    disabled={revokeSessionMutation.isPending}
-                    title="Revocar sesión"
-                  >
-                    <LogOut size={14} />
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      </Card>
     </div>
   );
 }

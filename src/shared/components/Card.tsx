@@ -1,17 +1,19 @@
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 
 interface CardProps {
   children: ReactNode;
   className?: string;
+  style?: CSSProperties;
   hover?: boolean;
   onClick?: () => void;
 }
 
-export function Card({ children, className = '', hover = true, onClick }: CardProps) {
+export function Card({ children, className = '', style, hover = true, onClick }: CardProps) {
   const Tag = onClick ? 'button' : 'div';
   return (
     <Tag
       className={`card ${hover ? 'card--hover' : ''} ${className}`}
+      style={style}
       onClick={onClick}
       {...(onClick ? { type: 'button' as const } : {})}
     >

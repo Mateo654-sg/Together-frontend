@@ -231,34 +231,42 @@ export default function CategoriesPage() {
         <div className="goals-grid">
           {filteredCategories.map((cat: Category) => {
             const CategoryIcon = getCategoryIcon(cat);
+            const baseColor = cat.color || '#6366f1';
             return (
-              <Card key={cat.id} hover={false}>
+              <Card key={cat.id} hover>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
                   <div style={{
-                    width: 44, height: 44, borderRadius: 'var(--radius-lg)',
-                    background: cat.color || 'var(--color-bg-elevated)',
+                    width: 52, height: 52, borderRadius: 'var(--radius-xl)',
+                    background: `linear-gradient(135deg, ${baseColor}cc 0%, ${baseColor} 100%)`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     flexShrink: 0,
                     color: 'white',
+                    boxShadow: `0 4px 12px ${baseColor}40`,
                   }}>
-                    <CategoryIcon size={20} />
+                    <CategoryIcon size={22} />
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 600 }}>{cat.name}</h3>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 600, marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cat.name}</h3>
                     <span style={{
-                      padding: '1px var(--space-2)', borderRadius: 'var(--radius-full)',
+                      display: 'inline-flex', alignItems: 'center',
+                      padding: '2px var(--space-2)', borderRadius: 'var(--radius-full)',
                       fontSize: 'var(--text-xs)', fontWeight: 600,
                       background: cat.type === 'expense' ? 'var(--color-danger-dim)' : 'var(--color-success-dim)',
                       color: cat.type === 'expense' ? 'var(--color-danger)' : 'var(--color-success)',
                     }}>
-                      {cat.type === 'expense' ? 'Gasto' : 'Ingreso'}
+                      {cat.type === 'expense' ? '↑ Gasto' : '↓ Ingreso'}
                     </span>
                   </div>
-                  <div style={{ display: 'flex', gap: 'var(--space-1)' }}>
-                    <button className="btn btn--ghost btn--sm" onClick={() => editCategory(cat)}>
+                  <div style={{ display: 'flex', gap: 'var(--space-1)', flexShrink: 0 }}>
+                    <button className="btn btn--ghost btn--sm" onClick={() => editCategory(cat)} title="Editar">
                       <Edit3 size={14} />
                     </button>
-                    <button className="btn btn--ghost btn--sm" onClick={() => { if (window.confirm('¿Eliminar esta categoría?')) deleteMutation.mutate(cat.id); }}>
+                    <button
+                      className="btn btn--ghost btn--sm"
+                      style={{ color: 'var(--color-danger)' }}
+                      onClick={() => { if (window.confirm('¿Eliminar esta categoría?')) deleteMutation.mutate(cat.id); }}
+                      title="Eliminar"
+                    >
                       <Trash2 size={14} />
                     </button>
                   </div>

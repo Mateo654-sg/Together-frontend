@@ -11,7 +11,6 @@ export interface NavEntry {
 export const NAV_ITEMS: NavEntry[] = [
   { path: '/dashboard', label: 'Inicio' },
   { path: '/activity', label: 'Actividad' },
-  { path: '/transfers', label: 'Transferencias' },
   { path: '/recurring', label: 'Recurrentes' },
   { path: '/goals', label: 'Metas' },
   { path: '/budgets', label: 'Presupuestos' },

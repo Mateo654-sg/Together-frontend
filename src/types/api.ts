@@ -61,18 +61,6 @@ export interface CreateIncomeInput {
   category_id?: string; notes?: string;
 }
 
-// ─── Transfers ───────────────────────────────────────────────
-export interface Transfer {
-  id: string; user_id: string; from_method: string; to_method: string;
-  amount: number; description: string | null; transfer_date: string;
-  created_at: string; updated_at: string;
-}
-export interface CreateTransferInput {
-  from_method: string; to_method: string; amount: number;
-  description?: string; transfer_date: string;
-}
-export type UpdateTransferInput = Partial<CreateTransferInput>;
-
 // ─── Recurring Transactions ──────────────────────────────────
 export interface RecurringTransaction {
   id: string; user_id: string; category_id: string | null;

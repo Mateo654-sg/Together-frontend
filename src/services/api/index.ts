@@ -23,5 +23,4 @@ export { remindersApi } from './reminders';
 export { chatApi } from './chat';
 export { notificationsApi } from './notifications';
 export { uploadApi } from './upload';
-export { transfersApi } from './transfers';
 export { recurringApi } from './recurring';

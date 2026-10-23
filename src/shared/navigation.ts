@@ -1,4 +1,4 @@
-import { LayoutDashboard, ArrowLeftRight, Target, Bot, User, Heart, Wallet, BellRing, Tags, Users, DollarSign, CalendarDays, MessageCircle, BarChart3, Repeat, RefreshCw } from 'lucide-react';
+import { LayoutDashboard, ArrowLeftRight, Target, Bot, User, Heart, Wallet, BellRing, Tags, Users, DollarSign, CalendarDays, MessageCircle, BarChart3, RefreshCw } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { NAV_ITEMS, BOTTOM_NAV_ITEMS } from './navigation-config';
 
@@ -11,7 +11,6 @@ export interface NavItem {
 const ICONS: Record<string, LucideIcon> = {
   '/dashboard': LayoutDashboard,
   '/activity': ArrowLeftRight,
-  '/transfers': Repeat,
   '/recurring': RefreshCw,
   '/goals': Target,
   '/budgets': Wallet,

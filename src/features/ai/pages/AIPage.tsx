@@ -12,6 +12,33 @@ import { aiApi } from '@/services/api';
 
 type AITab = 'chat' | 'analysis' | 'score' | 'predictions' | 'recommendations' | 'insights' | 'summary' | 'health' | 'simulator';
 
+function AIEmptyState({ icon: Icon, title, description }: { icon: typeof BarChart3; title: string; description: string }) {
+  return (
+    <div style={{ textAlign: 'center', padding: 'var(--space-10) var(--space-6)' }}>
+      <div style={{
+        width: 72, height: 72, borderRadius: 'var(--radius-2xl)',
+        background: 'var(--gradient-brand)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        margin: '0 auto var(--space-5)',
+        color: 'white',
+        boxShadow: 'var(--shadow-brand)',
+      }}>
+        <Icon size={32} />
+      </div>
+      <h3 style={{ fontWeight: 700, fontSize: 'var(--text-lg)', marginBottom: 'var(--space-2)' }}>{title}</h3>
+      <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', maxWidth: 280, margin: '0 auto var(--space-4)', lineHeight: 1.6 }}>{description}</p>
+      <span style={{
+        display: 'inline-flex', alignItems: 'center', gap: 6,
+        padding: '6px 14px', borderRadius: 'var(--radius-full)',
+        background: 'var(--color-brand-dim)', color: 'var(--color-brand-400)',
+        fontSize: 'var(--text-xs)', fontWeight: 600,
+      }}>
+        <Sparkles size={12} /> Próximamente disponible
+      </span>
+    </div>
+  );
+}
+
 const tabs: { key: AITab; label: string; icon: typeof BarChart3 }[] = [
   { key: 'chat', label: 'Chat', icon: Bot },
   { key: 'analysis', label: 'Análisis', icon: BarChart3 },
@@ -144,7 +171,7 @@ export default function AIPage() {
       const response = await aiApi.chat(userMsg);
       setMessages((prev) => [...prev, { role: 'ai', content: response.answer }]);
     } catch {
-      setMessages((prev) => [...prev, { role: 'ai', content: 'Lo siento, ocurrió un error al procesar tu consulta.' }]);
+      setMessages((prev) => [...prev, { role: 'ai', content: 'El módulo de IA no está disponible en este momento. Pronto estará completamente operativo.' }]);
     } finally {
       setLoading(false);
     }
@@ -169,12 +196,18 @@ export default function AIPage() {
         return (
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
-              <div style={{ width: 40, height: 40, borderRadius: 'var(--radius-lg)', background: 'var(--gradient-brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
-                <Sparkles size={20} />
+              <div style={{
+                width: 48, height: 48, borderRadius: 'var(--radius-xl)',
+                background: 'var(--gradient-brand)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'white', flexShrink: 0,
+                boxShadow: 'var(--shadow-brand-sm)',
+              }}>
+                <Sparkles size={22} />
               </div>
               <div>
-                <h2 style={{ fontWeight: 600, fontSize: 'var(--text-base)' }}>¿En qué puedo ayudarte?</h2>
-                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Analiza tus finanzas, obtén recomendaciones y más</p>
+                <h2 style={{ fontWeight: 700, fontSize: 'var(--text-base)' }}>Asistente Financiero</h2>
+                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Análisis inteligente de tus finanzas personales</p>
               </div>
             </div>
 
@@ -240,7 +273,7 @@ export default function AIPage() {
 
       case 'analysis':
         if (analysisLoading) return <SkeletonCard count={2} />;
-        if (!analysis) return <p style={{ color: 'var(--color-text-muted)' }}>No hay datos de análisis disponibles.</p>;
+        if (!analysis) return <AIEmptyState icon={BarChart3} title="Análisis mensual" description="Conecta el módulo de IA para obtener análisis detallados de tus gastos e ingresos mes a mes." />;
         return (
           <div>
             <h3 style={{ marginBottom: 'var(--space-3)' }}>Análisis mensual</h3>
@@ -257,7 +290,7 @@ export default function AIPage() {
 
       case 'score':
         if (scoreLoading) return <SkeletonCard count={1} />;
-        if (!scoreData) return <p style={{ color: 'var(--color-text-muted)' }}>Calculando tu score financiero...</p>;
+        if (!scoreData) return <AIEmptyState icon={Target} title="Score Financiero" description="Tu puntuación de salud financiera se calculará automáticamente cuando la IA analice tus movimientos." />;
         return (
           <div>
             <ScoreGauge score={scoreData.score} grade={scoreData.grade} />
@@ -278,7 +311,7 @@ export default function AIPage() {
 
       case 'predictions':
         if (predLoading) return <SkeletonCard count={2} />;
-        if (!predictions) return <p style={{ color: 'var(--color-text-muted)' }}>No hay predicciones disponibles.</p>;
+        if (!predictions) return <AIEmptyState icon={LineChart} title="Predicciones financieras" description="La IA proyectará tus gastos e ingresos futuros basándose en tus patrones de comportamiento." />;
         return (
           <div>
             <div style={{ marginBottom: 'var(--space-4)' }}>
@@ -299,7 +332,7 @@ export default function AIPage() {
 
       case 'recommendations':
         if (recsLoading) return <SkeletonCard count={2} />;
-        if (!recommendationsData) return <p style={{ color: 'var(--color-text-muted)' }}>No hay recomendaciones disponibles.</p>;
+        if (!recommendationsData) return <AIEmptyState icon={Lightbulb} title="Recomendaciones personalizadas" description="La IA identificará oportunidades de ahorro y estrategias financieras adaptadas a tu perfil." />;
         return (
           <div>
             {recommendationsData.potential_savings > 0 && (
@@ -339,7 +372,7 @@ export default function AIPage() {
 
       case 'insights':
         if (insightsLoading) return <SkeletonCard count={2} />;
-        if (!insightsData) return <p style={{ color: 'var(--color-text-muted)' }}>No hay insights disponibles.</p>;
+        if (!insightsData) return <AIEmptyState icon={Activity} title="Insights financieros" description="Descubrimientos clave sobre tus hábitos de gasto, tendencias y oportunidades de mejora." />;
         return (
           <div>
             <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-4)' }}>
@@ -358,7 +391,7 @@ export default function AIPage() {
 
       case 'summary':
         if (summaryLoading) return <SkeletonCard count={2} />;
-        if (!summaryData) return <p style={{ color: 'var(--color-text-muted)' }}>No hay resumen disponible para este mes.</p>;
+        if (!summaryData) return <AIEmptyState icon={ScrollText} title="Resumen mensual" description="Un informe narrativo completo de tu actividad financiera del mes, redactado por la IA." />;
         return (
           <div>
             <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-2)' }}>
@@ -385,7 +418,7 @@ export default function AIPage() {
 
       case 'health':
         if (healthLoading) return <SkeletonCard count={2} />;
-        if (!healthData) return <p style={{ color: 'var(--color-text-muted)' }}>No hay datos de salud financiera.</p>;
+        if (!healthData) return <AIEmptyState icon={Heart} title="Salud Financiera" description="Tu diagnóstico completo de bienestar financiero: indicadores clave, alertas y plan de mejora." />;
         return (
           <div>
             <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
@@ -479,14 +512,45 @@ export default function AIPage() {
 
   return (
     <div>
-      <div className="dashboard-header">
-        <h1>Asistente IA</h1>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 'var(--space-4)',
+        marginBottom: 'var(--space-6)',
+        padding: 'var(--space-5)',
+        borderRadius: 'var(--radius-2xl)',
+        background: 'var(--gradient-brand)',
+        boxShadow: 'var(--shadow-brand)',
+        color: 'white',
+      }}>
+        <div style={{
+          width: 52, height: 52, borderRadius: 'var(--radius-xl)',
+          background: 'rgba(255,255,255,0.2)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0, backdropFilter: 'blur(8px)',
+        }}>
+          <BrainCircuit size={26} />
+        </div>
+        <div>
+          <h1 style={{ fontSize: 'var(--text-xl)', fontWeight: 800, marginBottom: 2 }}>Asistente de IA</h1>
+          <p style={{ fontSize: 'var(--text-sm)', opacity: 0.85 }}>Análisis, predicciones y recomendaciones inteligentes</p>
+        </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-6)', overflowX: 'auto', paddingBottom: 'var(--space-1)', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-5)', overflowX: 'auto', paddingBottom: 'var(--space-1)' }}>
         {tabs.map((t) => (
-          <button key={t.key} className={`chip ${tab === t.key ? 'chip--active' : ''}`} onClick={() => setTab(t.key)}>
-            <t.icon size={14} /> {t.label}
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap',
+              padding: '7px 14px', borderRadius: 'var(--radius-full)',
+              fontSize: 'var(--text-sm)', fontWeight: 600, border: 'none', cursor: 'pointer',
+              background: tab === t.key ? 'var(--gradient-brand)' : 'var(--color-bg-elevated)',
+              color: tab === t.key ? 'white' : 'var(--color-text-secondary)',
+              boxShadow: tab === t.key ? 'var(--shadow-brand-sm)' : 'none',
+              transition: 'all var(--transition-fast)',
+            }}
+          >
+            <t.icon size={13} /> {t.label}
           </button>
         ))}
       </div>

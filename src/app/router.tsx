@@ -46,7 +46,6 @@ const ProfilePage = lazy(() => import('@/features/profile/pages/ProfilePage'));
 const NotificationsPage = lazy(() => import('@/features/notifications/pages/NotificationsPage'));
 const ReportsPage = lazy(() => import('@/features/reports/pages/ReportsPage'));
 const SettingsPage = lazy(() => import('@/features/profile/pages/SettingsPage'));
-const TransfersPage = lazy(() => import('@/features/transfers/pages/TransfersPage'));
 const RecurringPage = lazy(() => import('@/features/recurring/pages/RecurringPage'));
 
 function SuspenseWrapper({ children }: { children: React.ReactNode }) {
@@ -109,7 +108,6 @@ export function Router() {
           <Route path="/notifications" element={<SuspenseWrapper><NotificationsPage /></SuspenseWrapper>} />
           <Route path="/reports" element={<SuspenseWrapper><ReportsPage /></SuspenseWrapper>} />
           <Route path="/settings" element={<SuspenseWrapper><SettingsPage /></SuspenseWrapper>} />
-          <Route path="/transfers" element={<SuspenseWrapper><TransfersPage /></SuspenseWrapper>} />
           <Route path="/recurring" element={<SuspenseWrapper><RecurringPage /></SuspenseWrapper>} />
         </Route>
       </Route>
