@@ -13,6 +13,7 @@ import { ActivityList } from '@/shared/components/ActivityList';
 import { NewMovementButton } from '@/shared/components/NewMovementButton';
 import { ExpenseFormModal } from '@/features/expenses/components/ExpenseFormModal';
 import { IncomeFormModal } from '@/features/incomes/components/IncomeFormModal';
+import { useConfirm } from '@/shared/components/ConfirmDialog';
 import { useToast } from '@/shared/components/Toast';
 import { toFiniteNumber } from '@/shared/utils/format';
 import type { ActivityItem } from '@/shared/utils/activity';
@@ -30,6 +31,7 @@ const FILTERS: { key: FilterType; label: string; showChevron?: boolean }[] = [
 export default function SharedFinancePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { confirm } = useConfirm();
   const { toast } = useToast();
   const [filter, setFilter] = useState<FilterType>('all');
   const [sort, setSort] = useState<SortType>('newest');
@@ -141,8 +143,8 @@ export default function SharedFinancePage() {
     if (incomesQuery.hasNextPage) incomesQuery.fetchNextPage();
   };
 
-  const handleDelete = (item: ActivityItem) => {
-    if (window.confirm('¿Eliminar este movimiento compartido?')) deleteMutation.mutate(item);
+  const handleDelete = async (item: ActivityItem) => {
+    if (await confirm('¿Eliminar este movimiento compartido?')) deleteMutation.mutate(item);
   };
 
   if (!isLinked) {

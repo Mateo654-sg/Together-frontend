@@ -13,6 +13,7 @@ import { EmptyState } from '@/shared/components/EmptyState';
 import { ErrorState } from '@/shared/components/ErrorState';
 import { SkeletonCard } from '@/shared/components/Skeleton';
 import { useToast } from '@/shared/components/Toast';
+import { useConfirm } from '@/shared/components/ConfirmDialog';
 import { formatCurrency, formatDate, toFiniteNumber } from '@/shared/utils/format';
 import type { Report } from '@/types/api';
 
@@ -284,6 +285,7 @@ const reportFormats = [
 function SavedReportsSection() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { confirm } = useConfirm();
   const [type, setType] = useState('monthly');
   const [format, setFormat] = useState('pdf');
   const [month, setMonth] = useState(new Date().getMonth() + 1);
@@ -399,7 +401,7 @@ function SavedReportsSection() {
                     <button
                       className="btn btn--ghost btn--sm"
                       title="Eliminar"
-                      onClick={() => { if (window.confirm('¿Eliminar este reporte?')) deleteMutation.mutate(report.id); }}
+                      onClick={async () => { if (await confirm('¿Eliminar este reporte?')) deleteMutation.mutate(report.id); }}
                     >
                       <Trash2 size={14} />
                     </button>

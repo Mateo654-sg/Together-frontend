@@ -7,6 +7,7 @@ import {
 import { Card } from '@/shared/components/Card';
 import { ProgressBar } from '@/shared/components/ProgressBar';
 import { MoneyDisplay } from '@/shared/components/MoneyDisplay';
+import { MoneyInput } from '@/shared/components/MoneyInput';
 import { SkeletonCard } from '@/shared/components/Skeleton';
 import { aiApi } from '@/services/api';
 
@@ -466,7 +467,7 @@ export default function AIPage() {
               </div>
               <div className="form-group">
                 <label className="form-label">Monto mensual</label>
-                <input type="number" step="0.01" min="0" placeholder="0.00" value={simAmount} onChange={(e) => setSimAmount(e.target.value)} />
+                <MoneyInput value={simAmount} onChange={setSimAmount} placeholder="0" />
               </div>
               <div className="form-group">
                 <label className="form-label">Meses a proyectar</label>

@@ -8,11 +8,13 @@ import { ProgressBar } from '@/shared/components/ProgressBar';
 import { SkeletonCard } from '@/shared/components/Skeleton';
 import { ErrorState } from '@/shared/components/ErrorState';
 import { formatDate, formatRelative } from '@/shared/utils/format';
+import { useConfirm } from '@/shared/components/ConfirmDialog';
 
 export default function GoalDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { confirm } = useConfirm();
 
   const { data: goal, isLoading, isError, refetch } = useQuery({
     queryKey: ['goal', id],
@@ -50,7 +52,7 @@ export default function GoalDetailPage() {
           </button>
           <button
             className="btn btn--danger btn--sm"
-            onClick={() => { if (window.confirm('¿Eliminar esta meta?')) deleteMutation.mutate(); }}
+            onClick={async () => { if (await confirm('¿Eliminar esta meta?')) deleteMutation.mutate(); }}
             disabled={deleteMutation.isPending}
           >
             <Trash2 size={14} /> {deleteMutation.isPending ? 'Eliminando...' : 'Eliminar'}

@@ -8,6 +8,7 @@ import { SkeletonCard } from '@/shared/components/Skeleton';
 import { ErrorState } from '@/shared/components/ErrorState';
 import { EmptyState } from '@/shared/components/EmptyState';
 import { useToast } from '@/shared/components/Toast';
+import { useConfirm } from '@/shared/components/ConfirmDialog';
 import { ProgressBar } from '@/shared/components/ProgressBar';
 import { MoneyDisplay } from '@/shared/components/MoneyDisplay';
 import { toFiniteNumber } from '@/shared/utils/format';
@@ -19,6 +20,7 @@ export default function BudgetsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { confirm } = useConfirm();
   const [filterMonth, setFilterMonth] = useState(new Date().getMonth() + 1);
   const [filterYear, setFilterYear] = useState(new Date().getFullYear());
 
@@ -138,7 +140,7 @@ export default function BudgetsPage() {
                   </button>
                   <button
                     className="btn btn--ghost btn--sm"
-                    onClick={() => { if (window.confirm('¿Eliminar este presupuesto?')) deleteMutation.mutate(budget.id); }}
+                    onClick={async () => { if (await confirm('¿Eliminar este presupuesto?')) deleteMutation.mutate(budget.id); }}
                   >
                     <Trash2 size={14} /> Eliminar
                   </button>

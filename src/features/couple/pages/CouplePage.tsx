@@ -8,11 +8,13 @@ import { SkeletonCard } from '@/shared/components/Skeleton';
 import { ErrorState } from '@/shared/components/ErrorState';
 import { EmptyState } from '@/shared/components/EmptyState';
 import { useToast } from '@/shared/components/Toast';
+import { useConfirm } from '@/shared/components/ConfirmDialog';
 
 export default function CouplePage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { confirm } = useConfirm();
   const [inviteCode, setInviteCode] = useState('');
   const [copySuccess, setCopySuccess] = useState(false);
 
@@ -190,7 +192,7 @@ export default function CouplePage() {
               <div style={{ marginTop: 'var(--space-4)' }}>
                 <button
                   className="btn btn--danger btn--sm"
-                  onClick={() => { if (window.confirm('¿Cancelar la invitación?')) cancelMutation.mutate(); }}
+                  onClick={async () => { if (await confirm('¿Cancelar la invitación?')) cancelMutation.mutate(); }}
                   disabled={cancelMutation.isPending}
                 >
                   {cancelMutation.isPending ? 'Cancelando...' : 'Cancelar invitación'}
@@ -242,8 +244,8 @@ export default function CouplePage() {
             </button>
             <button
               className="btn btn--danger btn--sm"
-              onClick={() => {
-                if (window.confirm('¿Estás seguro de desvincular tu pareja? Se perderán los datos compartidos.')) {
+              onClick={async () => {
+                if (await confirm({ message: '¿Estás seguro de desvincular tu pareja? Se perderán los datos compartidos.', confirmLabel: 'Desvincular' })) {
                   unlinkMutation.mutate();
                 }
               }}

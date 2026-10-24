@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { categoriesApi } from '@/services/api';
 import { Card } from '@/shared/components/Card';
+import { useConfirm } from '@/shared/components/ConfirmDialog';
 import { FilterToolbar } from '@/shared/components/FilterToolbar';
 import { SkeletonCard } from '@/shared/components/Skeleton';
 import { ErrorState } from '@/shared/components/ErrorState';
@@ -88,6 +89,7 @@ function getCategoryIcon(category: Category): LucideIcon {
 export default function CategoriesPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { confirm } = useConfirm();
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
   const [search, setSearch] = useState('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
@@ -266,7 +268,7 @@ export default function CategoriesPage() {
                     <button
                       className="btn btn--ghost btn--sm"
                       style={{ color: 'var(--color-danger)' }}
-                      onClick={() => { if (window.confirm('¿Eliminar esta categoría?')) deleteMutation.mutate(cat.id); }}
+                      onClick={async () => { if (await confirm('¿Eliminar esta categoría?')) deleteMutation.mutate(cat.id); }}
                       title="Eliminar"
                     >
                       <Trash2 size={14} />

@@ -12,6 +12,7 @@ import { SkeletonCard } from '@/shared/components/Skeleton';
 import { ActivityList } from '@/shared/components/ActivityList';
 import { NewMovementButton } from '@/shared/components/NewMovementButton';
 import { toFiniteNumber } from '@/shared/utils/format';
+import { useConfirm } from '@/shared/components/ConfirmDialog';
 import type { ActivityItem } from '@/shared/utils/activity';
 
 import type { Expense, Income } from '@/types/api';
@@ -28,6 +29,7 @@ const FILTERS: { key: FilterType; label: string; showChevron?: boolean }[] = [
 export default function ActivityPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { confirm } = useConfirm();
   const [filter, setFilter] = useState<FilterType>('all');
   const [sort, setSort] = useState<SortType>('newest');
   const [search, setSearch] = useState('');
@@ -128,8 +130,8 @@ export default function ActivityPage() {
     if (incomesQuery.hasNextPage) incomesQuery.fetchNextPage();
   };
 
-  const handleDelete = (item: ActivityItem) => {
-    if (window.confirm('¿Eliminar este movimiento?')) deleteMutation.mutate(item);
+  const handleDelete = async (item: ActivityItem) => {
+    if (await confirm('¿Eliminar este movimiento?')) deleteMutation.mutate(item);
   };
 
   if (isLoading) {

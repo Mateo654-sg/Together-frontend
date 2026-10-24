@@ -8,11 +8,13 @@ import { SkeletonCard } from '@/shared/components/Skeleton';
 import { ErrorState } from '@/shared/components/ErrorState';
 import { formatDate, formatRelative } from '@/shared/utils/format';
 import { useCategoryName } from '@/shared/hooks/useCategoryName';
+import { useConfirm } from '@/shared/components/ConfirmDialog';
 
 export default function ExpenseDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { confirm } = useConfirm();
 
   const { data: expense, isLoading, isError, refetch } = useQuery({
     queryKey: ['expense', id],
@@ -51,7 +53,7 @@ export default function ExpenseDetailPage() {
           </button>
           <button
             className="btn btn--danger btn--sm"
-            onClick={() => { if (window.confirm('¿Eliminar este gasto?')) deleteMutation.mutate(); }}
+            onClick={async () => { if (await confirm('¿Eliminar este gasto?')) deleteMutation.mutate(); }}
             disabled={deleteMutation.isPending}
           >
             <Trash2 size={14} /> {deleteMutation.isPending ? 'Eliminando...' : 'Eliminar'}

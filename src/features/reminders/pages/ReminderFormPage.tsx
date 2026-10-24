@@ -5,6 +5,7 @@ import { ArrowLeft, Save } from 'lucide-react';
 import { remindersApi } from '@/services/api';
 import { useToast } from '@/shared/components/Toast';
 import { SkeletonCard } from '@/shared/components/Skeleton';
+import { MoneyInput } from '@/shared/components/MoneyInput';
 import type { CreateReminderInput } from '@/types/api';
 
 export default function ReminderFormPage() {
@@ -106,14 +107,7 @@ export default function ReminderFormPage() {
 
           <div className="form-group">
             <label className="form-label">Monto (opcional)</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="0.00"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-            />
+            <MoneyInput value={amount} onChange={setAmount} placeholder="0" />
           </div>
 
           <button className="btn btn--primary" type="submit" disabled={mutation.isPending} style={{ marginTop: 'var(--space-4)' }}>

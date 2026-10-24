@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   ArrowRight, BarChart3, CalendarDays, Lightbulb, PiggyBank,
-  Plus, Share2, Target, TrendingDown, TrendingUp, Wallet, Users,
+  Share2, Target, TrendingDown, TrendingUp, Wallet, Users,
 } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -15,6 +15,7 @@ import { ProgressBar } from '@/shared/components/ProgressBar';
 import { SkeletonCard } from '@/shared/components/Skeleton';
 import { EmptyState } from '@/shared/components/EmptyState';
 import { ErrorState } from '@/shared/components/ErrorState';
+import { NewMovementButton } from '@/shared/components/NewMovementButton';
 import { useAuthStore } from '@/features/auth/store/auth-store';
 import { shareData, canShare } from '@/pwa/device';
 import { formatRelative, formatCurrency, toFiniteNumber } from '@/shared/utils/format';
@@ -54,8 +55,6 @@ function getVariation(current: number, previous?: number) {
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
   const user = useAuthStore((s) => s.user);
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['dashboard'],
@@ -67,15 +66,7 @@ export default function DashboardPage() {
     queryFn: () => couplesApi.getStatus(),
   });
 
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, []);
+
 
   if (isLoading) return (
     <div>
@@ -174,21 +165,7 @@ export default function DashboardPage() {
           <button className="dashboard-period" type="button">
             <CalendarDays size={16} /> {period} <span aria-hidden="true">▼</span>
           </button>
-          <div ref={menuRef} className="activity-new-menu">
-            <button className="btn btn--primary" type="button" onClick={() => setMenuOpen(!menuOpen)}>
-              <Plus size={18} /> Nuevo movimiento
-            </button>
-            {menuOpen && (
-              <div className="dropdown-menu">
-                <button className="dropdown-item" onClick={() => { setMenuOpen(false); navigate('/expenses/new'); }}>
-                  <TrendingDown size={16} /> Nuevo gasto
-                </button>
-                <button className="dropdown-item" onClick={() => { setMenuOpen(false); navigate('/incomes/new'); }}>
-                  <TrendingUp size={16} /> Nuevo ingreso
-                </button>
-              </div>
-            )}
-          </div>
+          <NewMovementButton context="personal" />
         </div>
       </div>
 

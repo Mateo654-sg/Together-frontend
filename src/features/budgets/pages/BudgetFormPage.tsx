@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save } from 'lucide-react';
 import { budgetsApi, categoriesApi } from '@/services/api';
+import { MoneyInput } from '@/shared/components/MoneyInput';
 import { useToast } from '@/shared/components/Toast';
 import { SkeletonCard } from '@/shared/components/Skeleton';
 import type { Category } from '@/types/api';
@@ -81,22 +82,14 @@ export default function BudgetFormPage() {
             <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
               <option value="">General</option>
               {(categories || []).map((c: Category) => (
-                <option key={c.id} value={c.id}>{c.icon ? `${c.icon} ` : ''}{c.name}</option>
+                <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
           </div>
 
           <div className="form-group">
             <label className="form-label">Monto límite</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="0.00"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              required
-            />
+            <MoneyInput value={amount} onChange={setAmount} placeholder="0" required />
           </div>
 
           <div style={{ display: 'flex', gap: 'var(--space-3)' }}>

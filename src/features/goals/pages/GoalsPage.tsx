@@ -6,6 +6,7 @@ import {
 import { goalsApi, expensesApi } from '@/services/api';
 import { Card } from '@/shared/components/Card';
 import { MoneyDisplay } from '@/shared/components/MoneyDisplay';
+import { MoneyInput } from '@/shared/components/MoneyInput';
 import { ProgressBar } from '@/shared/components/ProgressBar';
 import { EmptyState } from '@/shared/components/EmptyState';
 import { ErrorState } from '@/shared/components/ErrorState';
@@ -254,14 +255,10 @@ export default function GoalsPage() {
 
             <div className="form-group">
               <label className="form-label" htmlFor="contribution-amount">Monto a aportar</label>
-              <input
+              <MoneyInput
                 id="contribution-amount"
-                type="number"
-                min="0"
-                step="0.01"
-                inputMode="decimal"
                 value={amount}
-                onChange={(event) => setAmount(event.target.value)}
+                onChange={setAmount}
                 placeholder="0"
                 autoFocus
               />

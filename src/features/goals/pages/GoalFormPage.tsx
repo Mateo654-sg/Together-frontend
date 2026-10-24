@@ -6,6 +6,7 @@ import { goalsApi } from '@/services/api';
 import { Card } from '@/shared/components/Card';
 import { SkeletonCard } from '@/shared/components/Skeleton';
 import { ErrorState } from '@/shared/components/ErrorState';
+import { MoneyInput } from '@/shared/components/MoneyInput';
 
 export default function GoalFormPage() {
   const { id } = useParams();
@@ -86,7 +87,7 @@ export default function GoalFormPage() {
         </div>
         <div className="form-group">
           <label className="form-label">Monto objetivo *</label>
-          <input className="form-input" type="number" step="0.01" min="0" value={targetAmount} onChange={(e) => setTargetAmount(e.target.value)} placeholder="0.00" />
+          <MoneyInput value={targetAmount} onChange={setTargetAmount} placeholder="0" />
         </div>
         <div className="form-group">
           <label className="form-label">Fecha objetivo</label>

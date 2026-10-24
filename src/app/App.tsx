@@ -22,6 +22,7 @@ import { Router } from '@/app/router';
 import { PageLoader } from '@/shared/components/PageLoader';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 import { ToastProvider } from '@/shared/components/Toast';
+import { ConfirmProvider } from '@/shared/components/ConfirmDialog';
 import { ThemeManager } from '@/shared/theme/ThemeManager';
 import { PwaSyncToasts } from '@/pwa/PwaSyncToasts';
 import { setLogoutCallback } from '@/config/api';
@@ -70,13 +71,15 @@ export function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <ToastProvider>
-          <ThemeManager />
-          <PwaSyncToasts />
-          <AppInitializer>
-            <ErrorBoundary>
-              <Router />
-            </ErrorBoundary>
-          </AppInitializer>
+          <ConfirmProvider>
+            <ThemeManager />
+            <PwaSyncToasts />
+            <AppInitializer>
+              <ErrorBoundary>
+                <Router />
+              </ErrorBoundary>
+            </AppInitializer>
+          </ConfirmProvider>
         </ToastProvider>
       </BrowserRouter>
       {/* DevTools sólo en desarrollo — Vite elimina este bloque en el build de producción */}

@@ -5,6 +5,7 @@ import { categoriesApi, expensesApi, sharedExpensesApi, tagsApi, uploadApi } fro
 import { Modal } from '@/shared/components/Modal';
 import { SkeletonCard } from '@/shared/components/Skeleton';
 import { useToast } from '@/shared/components/Toast';
+import { MoneyInput } from '@/shared/components/MoneyInput';
 import { getFriendlyLocation, captureImageFile, vibrate } from '@/pwa/device';
 import type { MovementContext } from '@/shared/utils/activity';
 import type { Expense, SharedExpense, Tag } from '@/types/api';
@@ -41,7 +42,7 @@ export function ExpenseFormModal({ open, onClose, context, expenseId }: ExpenseF
 
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
-  const [expenseDate, setExpenseDate] = useState(new Date().toISOString().split('T')[0]);
+  const [expenseDate, setExpenseDate] = useState(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; });
   const [categoryId, setCategoryId] = useState('');
   const [notes, setNotes] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
@@ -75,7 +76,7 @@ export function ExpenseFormModal({ open, onClose, context, expenseId }: ExpenseF
     if (!editMode) {
       setAmount('');
       setDescription('');
-      setExpenseDate(new Date().toISOString().split('T')[0]);
+      setExpenseDate((()=>{ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })());
       setCategoryId('');
       setNotes('');
       setPaymentMethod('');
@@ -202,7 +203,7 @@ export function ExpenseFormModal({ open, onClose, context, expenseId }: ExpenseF
           </div>
           <div className="form-group">
             <label className="form-label">Monto *</label>
-            <input className="form-input" type="number" step="0.01" min="0" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" />
+            <MoneyInput value={amount} onChange={setAmount} placeholder="0" />
           </div>
           <div className="form-group">
             <label className="form-label">Fecha</label>
@@ -214,7 +215,7 @@ export function ExpenseFormModal({ open, onClose, context, expenseId }: ExpenseF
               <select className="form-input" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
                 <option value="">Sin categoría</option>
                 {categories?.map((c: { id: string; name: string; icon: string | null }) => (
-                  <option key={c.id} value={c.id}>{c.icon ? `${c.icon} ` : ''}{c.name}</option>
+                  <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
             </div>

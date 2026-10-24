@@ -7,7 +7,9 @@ import { SkeletonCard } from '@/shared/components/Skeleton';
 import { ErrorState } from '@/shared/components/ErrorState';
 import { EmptyState } from '@/shared/components/EmptyState';
 import { MoneyDisplay } from '@/shared/components/MoneyDisplay';
+import { MoneyInput } from '@/shared/components/MoneyInput';
 import { useToast } from '@/shared/components/Toast';
+import { useConfirm } from '@/shared/components/ConfirmDialog';
 import { formatDate, toFiniteNumber } from '@/shared/utils/format';
 import type { RecurringTransaction } from '@/types/api';
 
@@ -39,6 +41,7 @@ const EMPTY_FORM: FormState = {
 export default function RecurringPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { confirm } = useConfirm();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<RecurringTransaction | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
@@ -214,7 +217,7 @@ export default function RecurringPage() {
               </div>
               <div className="form-group">
                 <label className="form-label">Monto *</label>
-                <input className="form-input" type="number" step="0.01" min="0" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="0.00" required />
+                <MoneyInput value={form.amount} onChange={(v) => setForm({ ...form, amount: v })} placeholder="0" required />
               </div>
               <div className="form-group">
                 <label className="form-label">Próxima ejecución</label>
@@ -285,7 +288,7 @@ export default function RecurringPage() {
                       <RefreshCw size={14} />
                     </button>
                     <button type="button" title="Editar" onClick={() => setEditing(r)}><Edit2 size={14} /></button>
-                    <button type="button" title="Eliminar" onClick={() => { if (window.confirm('¿Eliminar este movimiento recurrente?')) deleteMutation.mutate(r.id); }}><Trash2 size={14} /></button>
+                    <button type="button" title="Eliminar" onClick={async () => { if (await confirm('¿Eliminar este movimiento recurrente?')) deleteMutation.mutate(r.id); }}><Trash2 size={14} /></button>
                   </div>
                 </div>
               );

@@ -5,6 +5,7 @@ import { categoriesApi, incomesApi, sharedExpensesApi } from '@/services/api';
 import { Modal } from '@/shared/components/Modal';
 import { SkeletonCard } from '@/shared/components/Skeleton';
 import { useToast } from '@/shared/components/Toast';
+import { MoneyInput } from '@/shared/components/MoneyInput';
 import type { MovementContext } from '@/shared/utils/activity';
 import type { Income, SharedIncome } from '@/types/api';
 
@@ -22,7 +23,7 @@ export function IncomeFormModal({ open, onClose, context, incomeId }: IncomeForm
 
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
-  const [incomeDate, setIncomeDate] = useState(new Date().toISOString().split('T')[0]);
+  const [incomeDate, setIncomeDate] = useState(() => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; });
   const [categoryId, setCategoryId] = useState('');
   const [notes, setNotes] = useState('');
 
@@ -43,7 +44,7 @@ export function IncomeFormModal({ open, onClose, context, incomeId }: IncomeForm
     if (!editMode) {
       setAmount('');
       setDescription('');
-      setIncomeDate(new Date().toISOString().split('T')[0]);
+      setIncomeDate((()=>{ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })());
       setCategoryId('');
       setNotes('');
       return;
@@ -108,7 +109,7 @@ export function IncomeFormModal({ open, onClose, context, incomeId }: IncomeForm
           </div>
           <div className="form-group">
             <label className="form-label">Monto *</label>
-            <input className="form-input" type="number" step="0.01" min="0" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" />
+            <MoneyInput value={amount} onChange={setAmount} placeholder="0" />
           </div>
           <div className="form-group">
             <label className="form-label">Fecha</label>
@@ -120,7 +121,7 @@ export function IncomeFormModal({ open, onClose, context, incomeId }: IncomeForm
               <select className="form-input" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
                 <option value="">Sin categoría</option>
                 {categories?.map((c: { id: string; name: string; icon: string | null }) => (
-                  <option key={c.id} value={c.id}>{c.icon ? `${c.icon} ` : ''}{c.name}</option>
+                  <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
             </div>

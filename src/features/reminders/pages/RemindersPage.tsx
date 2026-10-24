@@ -9,6 +9,7 @@ import { SkeletonCard } from '@/shared/components/Skeleton';
 import { ErrorState } from '@/shared/components/ErrorState';
 import { EmptyState } from '@/shared/components/EmptyState';
 import { useToast } from '@/shared/components/Toast';
+import { useConfirm } from '@/shared/components/ConfirmDialog';
 import { MoneyDisplay } from '@/shared/components/MoneyDisplay';
 import type { Reminder } from '@/types/api';
 
@@ -18,6 +19,7 @@ export default function RemindersPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { confirm } = useConfirm();
   const [filter, setFilter] = useState<ReminderFilter>('pending');
   const [search, setSearch] = useState('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
@@ -165,7 +167,7 @@ export default function RemindersPage() {
                         </button>
                         <button
                           className="btn btn--ghost btn--sm"
-                          onClick={() => { if (window.confirm('¿Eliminar este recordatorio?')) deleteMutation.mutate(reminder.id); }}
+                          onClick={async () => { if (await confirm('¿Eliminar este recordatorio?')) deleteMutation.mutate(reminder.id); }}
                         >
                           <Trash2 size={14} /> Eliminar
                         </button>
