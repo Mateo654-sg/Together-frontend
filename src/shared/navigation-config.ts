@@ -15,7 +15,7 @@ export const NAV_ITEMS: NavEntry[] = [
   { path: '/goals', label: 'Metas' },
   { path: '/budgets', label: 'Presupuestos' },
   { path: '/couple', label: 'Pareja' },
-  { path: '/shared-finance', label: 'Shared Fin.' },
+  { path: '/shared-finance', label: 'Compartidas' },
   { path: '/debts', label: 'Deudas' },
   { path: '/calendar', label: 'Calendario' },
   { path: '/chat', label: 'Chat' },
@@ -27,10 +27,12 @@ export const NAV_ITEMS: NavEntry[] = [
 ];
 
 /**
- * Navegación inferior (mobile).
- * Por diseño solo contiene "Inicio", de forma consistente en iOS y Android.
- * El resto de secciones se accede desde la sidebar/menú.
+ * Navegación inferior (mobile) — 5 ítems de acceso rápido.
  */
 export const BOTTOM_NAV_ITEMS: NavEntry[] = [
   { path: '/dashboard', label: 'Inicio' },
+  { path: '/activity', label: 'Actividad' },
+  { path: '/goals', label: 'Metas' },
+  { path: '/chat', label: 'Chat' },
+  { path: '/profile', label: 'Perfil' },
 ];

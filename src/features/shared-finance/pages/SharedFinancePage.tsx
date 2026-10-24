@@ -148,7 +148,7 @@ export default function SharedFinancePage() {
   if (!isLinked) {
     return (
       <div>
-        <div className="dashboard-header"><h1>Finanzas Compartidas</h1></div>
+        <div className="page-header"><h1 className="page-header__title">Finanzas Compartidas</h1></div>
         <EmptyState
           icon={Users}
           title="Vincula una pareja primero"

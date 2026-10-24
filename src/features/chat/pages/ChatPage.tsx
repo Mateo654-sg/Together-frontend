@@ -127,7 +127,7 @@ export default function ChatPage() {
   if (!partnerId && !coupleLoading) {
     return (
       <div>
-        <div className="dashboard-header"><h1>Chat de Pareja</h1></div>
+        <div className="page-header"><h1 className="page-header__title">Chat de Pareja</h1></div>
         <div className="card chat-empty-screen">
           <Heart size={34} />
           <p>Vincula una pareja primero</p>
@@ -143,8 +143,8 @@ export default function ChatPage() {
 
   return (
     <div>
-      <div className="dashboard-header">
-        <h1>Chat de Pareja</h1>
+      <div className="page-header">
+        <h1 className="page-header__title">Chat de Pareja</h1>
       </div>
 
       <div className="card chat-shell">

@@ -48,12 +48,12 @@ export default function DebtsPage() {
   const coupleBalance = balanceData?.balance ?? 0;
 
   return (
-    <div>
-      <div className="dashboard-header">
-        <h1>Deudas</h1>
+    <div className="list-screen">
+      <div className="page-header">
+        <h1 className="page-header__title">Deudas</h1>
       </div>
 
-      <div className="goals-summary-grid" style={{ marginBottom: 'var(--space-6)' }}>
+      <div className="goals-summary-grid">
         <Card hover={false}>
           <p className="summary-card__label">Total pendiente</p>
           <p className="summary-card__value" style={{ color: 'var(--color-danger)' }}>
@@ -89,43 +89,39 @@ export default function DebtsPage() {
           {debts.map((debt: Debt) => {
             const isPending = debt.status === 'pending';
             return (
-              <Card key={debt.id} hover={false}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 600 }}>
-                    {debt.description || 'Gasto compartido'}
-                  </h3>
-                  <span style={{
-                    padding: '2px var(--space-2)', borderRadius: 'var(--radius-full)',
-                    fontSize: 'var(--text-xs)', fontWeight: 600,
-                    background: isPending ? 'var(--color-warning-dim)' : 'var(--color-success-dim)',
-                    color: isPending ? 'var(--color-warning)' : 'var(--color-success)',
-                  }}>
+              <Card key={debt.id} hover={false} className="debt-card">
+                <div className="debt-card__header">
+                  <div className="debt-card__info">
+                    <h3>{debt.description || 'Gasto compartido'}</h3>
+                  </div>
+                  <span className={`debt-card__type ${isPending ? 'debt-card__type--owed' : 'debt-card__type--lending'}`}>
                     {isPending ? 'Pendiente' : debt.status === 'paid' ? 'Pagada' : 'Cancelada'}
                   </span>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 'var(--space-3)' }}>
+                <div className="debt-card__amounts">
                   <p style={{ fontSize: 'var(--text-xl)', fontWeight: 700 }}>
                     <MoneyDisplay amount={debt.amount} />
                   </p>
-                  <div style={{ display: 'flex', gap: 'var(--space-1)' }}>
-                    {isPending && (
-                      <button className="btn btn--primary btn--sm" onClick={() => payMutation.mutate(debt.id)} disabled={payMutation.isPending}>
-                        <CheckCircle size={14} /> Pagar
-                      </button>
-                    )}
-                    <button className="btn btn--ghost btn--sm" onClick={() => copyDebtData(debt)} title="Copiar datos">
-                      <Copy size={14} />
+                </div>
+
+                <div className="debt-card__actions">
+                  {isPending && (
+                    <button className="btn btn--primary btn--sm" onClick={() => payMutation.mutate(debt.id)} disabled={payMutation.isPending}>
+                      <CheckCircle size={14} /> Pagar
                     </button>
-                    {isPending && (
-                      <button className="btn btn--secondary btn--sm" onClick={() => {
-                        const text = `${debt.description || 'Gasto compartido'} $${toFiniteNumber(debt.amount).toFixed(2)}`;
-                        navigator.clipboard.writeText(text).then(() => toast('success', 'Listo para pagar con Nequi'));
-                      }}>
-                        <UserPlus size={14} /> Nequi
-                      </button>
-                    )}
-                  </div>
+                  )}
+                  <button className="btn btn--ghost btn--sm" onClick={() => copyDebtData(debt)} title="Copiar datos">
+                    <Copy size={14} />
+                  </button>
+                  {isPending && (
+                    <button className="btn btn--secondary btn--sm" onClick={() => {
+                      const text = `${debt.description || 'Gasto compartido'} $${toFiniteNumber(debt.amount).toFixed(2)}`;
+                      navigator.clipboard.writeText(text).then(() => toast('success', 'Listo para pagar con Nequi'));
+                    }}>
+                      <UserPlus size={14} /> Nequi
+                    </button>
+                  )}
                 </div>
               </Card>
             );

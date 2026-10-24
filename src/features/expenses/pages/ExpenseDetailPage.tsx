@@ -32,7 +32,7 @@ export default function ExpenseDetailPage() {
 
   if (isLoading) return (
     <div>
-      <div className="dashboard-header"><h1>Detalle del Gasto</h1></div>
+      <div className="page-header"><h1 className="page-header__title">Detalle del Gasto</h1></div>
       <SkeletonCard count={2} />
     </div>
   );
@@ -41,11 +41,11 @@ export default function ExpenseDetailPage() {
 
   return (
     <div>
-      <div className="dashboard-header">
+      <div className="page-header">
         <button className="btn btn--ghost btn--sm" onClick={() => navigate(-1)}>
           <ArrowLeft size={16} /> Volver
         </button>
-        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+        <div className="page-header__actions">
           <button className="btn btn--secondary btn--sm" onClick={() => navigate(`/expenses/${id}/edit`)}>
             <Edit3 size={14} /> Editar
           </button>

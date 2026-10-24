@@ -511,14 +511,16 @@ export default function ReportsPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-      <div className="dashboard-header">
-        <div>
-          <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--color-text-primary)' }}>Reportes y estadísticas</h1>
-          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Analiza tus finanzas y exporta tus movimientos</p>
+      <div className="page-header">
+        <div className="page-header__intro">
+          <h1>Reportes y estadísticas</h1>
+          <p>Analiza tus finanzas y exporta tus movimientos.</p>
         </div>
-        <span className="btn btn--sm btn--ghost" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <CalendarRange size={14} /> {new Date().getFullYear()}
-        </span>
+        <div className="page-header__actions">
+          <span className="btn btn--sm btn--ghost">
+            <CalendarRange size={14} /> {new Date().getFullYear()}
+          </span>
+        </div>
       </div>
 
       <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>

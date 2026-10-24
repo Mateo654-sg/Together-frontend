@@ -33,7 +33,7 @@ export default function IncomeDetailPage() {
 
   if (isLoading) return (
     <div>
-      <div className="dashboard-header"><h1>Detalle del Ingreso</h1></div>
+      <div className="page-header"><h1 className="page-header__title">Detalle del Ingreso</h1></div>
       <SkeletonCard count={2} />
     </div>
   );
@@ -42,17 +42,19 @@ export default function IncomeDetailPage() {
 
   return (
     <div>
-      <div className="dashboard-header">
+      <div className="page-header">
         <button className="btn btn--ghost btn--sm" onClick={() => navigate(-1)}>
           <ArrowLeft size={16} /> Volver
         </button>
-        <button
-          className="btn btn--danger btn--sm"
-          onClick={() => { if (window.confirm('¿Eliminar este ingreso?')) deleteMutation.mutate(); }}
-          disabled={deleteMutation.isPending}
-        >
-          <Trash2 size={14} /> {deleteMutation.isPending ? 'Eliminando...' : 'Eliminar'}
-        </button>
+        <div className="page-header__actions">
+          <button
+            className="btn btn--danger btn--sm"
+            onClick={() => { if (window.confirm('¿Eliminar este ingreso?')) deleteMutation.mutate(); }}
+            disabled={deleteMutation.isPending}
+          >
+            <Trash2 size={14} /> {deleteMutation.isPending ? 'Eliminando...' : 'Eliminar'}
+          </button>
+        </div>
       </div>
       <Card hover={false}>
         <div style={{ marginBottom: 'var(--space-6)' }}>

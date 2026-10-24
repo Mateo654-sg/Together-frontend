@@ -108,9 +108,9 @@ export default function ProfilePage() {
   };
 
   return (
-    <div>
-      <div className="dashboard-header">
-        <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--color-text-primary)' }}>Perfil</h1>
+    <div className="list-screen">
+      <div className="page-header">
+        <h1 className="page-header__title">Perfil</h1>
       </div>
 
       <Card hover={false}>

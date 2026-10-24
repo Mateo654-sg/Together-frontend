@@ -103,7 +103,7 @@ export default function GoalsPage() {
 
   if (isLoading) return (
     <div>
-      <div className="dashboard-header"><h1>Metas de ahorro</h1></div>
+      <div className="page-header"><h1 className="page-header__title">Metas de ahorro</h1></div>
       <SkeletonCard count={6} />
     </div>
   );
@@ -118,14 +118,16 @@ export default function GoalsPage() {
         </div>
       )}
 
-      <div className="dashboard-header">
-        <div className="dashboard-header__intro">
+      <div className="page-header">
+        <div className="page-header__intro">
           <h1>Metas de ahorro</h1>
           <p>Administra y sigue el progreso de tus objetivos financieros.</p>
         </div>
-        <button className="btn btn--primary" type="button" onClick={() => navigate('/goals/new')}>
-          <Plus size={18} /> Nueva meta
-        </button>
+        <div className="page-header__actions">
+          <button className="btn btn--primary" type="button" onClick={() => navigate('/goals/new')}>
+            <Plus size={18} /> Nueva meta
+          </button>
+        </div>
       </div>
 
       <div className="goals-summary-grid">

@@ -135,7 +135,7 @@ export default function ActivityPage() {
   if (isLoading) {
     return (
       <div>
-        <div className="dashboard-header"><h1>Actividad</h1></div>
+        <div className="page-header"><h1 className="page-header__title">Actividad</h1></div>
         <SkeletonCard count={6} />
       </div>
     );

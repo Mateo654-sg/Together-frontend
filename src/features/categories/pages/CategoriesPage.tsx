@@ -156,12 +156,14 @@ export default function CategoriesPage() {
   };
 
   return (
-    <div>
-      <div className="dashboard-header">
-        <h1>Categorías</h1>
-        <button className="btn btn--primary" onClick={() => { resetForm(); setShowForm(true); }}>
-          <Plus size={16} /> Nueva categoría
-        </button>
+    <div className="list-screen">
+      <div className="page-header">
+        <h1 className="page-header__title">Categorías</h1>
+        <div className="page-header__actions">
+          <button className="btn btn--primary" onClick={() => { resetForm(); setShowForm(true); }}>
+            <Plus size={16} /> Nueva categoría
+          </button>
+        </div>
       </div>
 
       <FilterToolbar

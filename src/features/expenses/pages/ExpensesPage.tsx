@@ -1,4 +1,4 @@
-import { Plus, Search, ChevronDown } from 'lucide-react';
+import { Plus, Search, ChevronDown, TrendingDown } from 'lucide-react';
 import { expensesApi } from '@/services/api';
 import { Card } from '@/shared/components/Card';
 import { MoneyDisplay } from '@/shared/components/MoneyDisplay';
@@ -23,8 +23,10 @@ export default function ExpensesPage() {
   });
 
   if (isLoading) return (
-    <div>
-      <div className="dashboard-header"><h1>Gastos</h1></div>
+    <div className="list-screen">
+      <div className="page-header">
+        <h1 className="page-header__title">Gastos</h1>
+      </div>
       <SkeletonCard count={5} />
     </div>
   );
@@ -32,58 +34,50 @@ export default function ExpensesPage() {
   if (isError) return <ErrorState onRetry={refetch} />;
 
   return (
-    <div>
-      <div className="dashboard-header">
-        <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--color-text-primary)' }}>
-          Gastos {total > 0 && <span style={{ fontSize: 'var(--text-sm)', fontWeight: 400, color: 'var(--color-text-muted)' }}>({total})</span>}
+    <div className="list-screen">
+      <div className="page-header">
+        <h1 className="page-header__title">
+          Gastos{total > 0 && <span className="page-header__count">({total})</span>}
         </h1>
-        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-          <div className="topbar__search" style={{ position: 'relative', width: 200 }}>
-            <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)' }} />
+        <div className="page-header__actions">
+          <label className="list-search" style={{ maxWidth: 260 }}>
+            <Search size={14} aria-hidden="true" />
             <input
               type="text"
-              placeholder="Buscar..."
+              placeholder="Buscar gastos..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              style={{ background: 'none', border: 'none', outline: 'none', color: 'inherit', width: '100%', paddingLeft: 24, fontSize: 'inherit' }}
+              aria-label="Buscar gastos"
             />
-          </div>
+          </label>
           <button className="btn btn--primary btn--sm" onClick={() => navigate('/expenses/new')}>
-            <Plus size={14} /> Nuevo Gasto
+            <Plus size={14} /> Nuevo gasto
           </button>
         </div>
       </div>
 
       {filtered.length === 0 ? (
         <EmptyState
+          icon={TrendingDown}
           title={search ? 'Sin resultados' : 'No hay gastos'}
           message={search ? 'Prueba con otros términos' : 'Registra tu primer gasto'}
-          action={search ? undefined : { label: 'Nuevo Gasto', onClick: () => navigate('/expenses/new') }}
+          action={search ? { label: 'Limpiar búsqueda', onClick: () => setSearch('') } : { label: 'Nuevo gasto', onClick: () => navigate('/expenses/new') }}
         />
       ) : (
-        <Card hover={false}>
+        <Card hover={false} className="list-card">
           {filtered.map((expense) => (
-            <Link
-              key={expense.id}
-              to={`/expenses/${expense.id}`}
-              className="activity-item"
-              style={{ textDecoration: 'none', display: 'flex', cursor: 'pointer' }}
-            >
-              <div className="activity-item__dot" style={{ background: 'var(--color-danger)' }} />
-              <div className="activity-item__info">
-                <div className="activity-item__title">{expense.description}</div>
-                <div className="activity-item__date">{formatDate(expense.expense_date)}</div>
+            <Link key={expense.id} to={`/expenses/${expense.id}`} className="list-item">
+              <div className="list-item__dot" style={{ background: 'var(--color-danger)', boxShadow: '0 0 0 4px var(--color-danger-dim)' }} />
+              <div className="list-item__info">
+                <div className="list-item__title">{expense.description}</div>
+                <div className="list-item__date">{formatDate(expense.expense_date)}</div>
               </div>
               <MoneyDisplay amount={expense.amount} size="sm" color="negative" />
             </Link>
           ))}
           {hasNextPage && (
-            <div style={{ textAlign: 'center', padding: 'var(--space-4)' }}>
-              <button
-                className="btn btn--ghost btn--sm"
-                onClick={() => fetchNextPage()}
-                disabled={isFetchingNextPage}
-              >
+            <div className="list-load-more">
+              <button className="btn btn--ghost btn--sm" onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
                 {isFetchingNextPage ? <span className="btn__loader" /> : <><ChevronDown size={16} /> Cargar más</>}
               </button>
             </div>

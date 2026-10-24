@@ -44,29 +44,26 @@ export default function BudgetsPage() {
   const alerts = alertsData?.data || [];
 
   return (
-    <div>
-      <div className="dashboard-header">
-        <h1>Presupuestos</h1>
-        <button className="btn btn--primary" onClick={() => navigate('/budgets/new')}>
-          <Plus size={16} /> Nuevo presupuesto
-        </button>
+    <div className="list-screen">
+      <div className="page-header">
+        <div className="page-header__intro">
+          <h1>Presupuestos</h1>
+          <p>Controla cuánto gastas en cada categoría mensualmente.</p>
+        </div>
+        <div className="page-header__actions">
+          <button className="btn btn--primary" onClick={() => navigate('/budgets/new')}>
+            <Plus size={16} /> Nuevo presupuesto
+          </button>
+        </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-6)' }}>
-        <select
-          value={filterMonth}
-          onChange={(e) => setFilterMonth(Number(e.target.value))}
-          style={{ width: 'auto', minWidth: 140 }}
-        >
+      <div className="budget-filters">
+        <select value={filterMonth} onChange={(e) => setFilterMonth(Number(e.target.value))}>
           {MONTHS.map((name, i) => (
             <option key={i + 1} value={i + 1}>{name}</option>
           ))}
         </select>
-        <select
-          value={filterYear}
-          onChange={(e) => setFilterYear(Number(e.target.value))}
-          style={{ width: 'auto', minWidth: 100 }}
-        >
+        <select value={filterYear} onChange={(e) => setFilterYear(Number(e.target.value))}>
           {Array.from({ length: 5 }, (_, i) => (
             <option key={filterYear - 2 + i} value={filterYear - 2 + i}>{filterYear - 2 + i}</option>
           ))}
@@ -74,24 +71,16 @@ export default function BudgetsPage() {
       </div>
 
       {alerts.length > 0 && (
-        <div style={{
-          padding: 'var(--space-4)', marginBottom: 'var(--space-6)',
-          borderRadius: 'var(--radius-lg)',
-          background: 'var(--color-warning-dim)',
-          border: '1px solid var(--color-warning)',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
+        <div className="budget-alerts">
+          <div className="budget-alerts__header">
             <AlertTriangle size={18} style={{ color: 'var(--color-warning)' }} />
-            <span style={{ fontWeight: 700, fontSize: 'var(--text-sm)' }}>Alertas de presupuesto</span>
+            <span className="budget-alerts__title">Alertas de presupuesto</span>
           </div>
-          <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+          <ul className="budget-alerts__list">
             {alerts.slice(0, 5).map((a, i) => (
-              <li key={i} style={{
-                display: 'flex', justifyContent: 'space-between',
-                padding: 'var(--space-1) 0', fontSize: 'var(--text-sm)',
-              }}>
-                <span>Has consumido el {Math.round(a.percentage)}% (${toFiniteNumber(a.spent).toFixed(2)} de ${toFiniteNumber(a.amount).toFixed(2)})</span>
-                <span style={{ fontWeight: 600, color: a.percentage >= 100 ? 'var(--color-danger)' : 'var(--color-warning)' }}>
+              <li key={i} className="budget-alert-item">
+                <span>Consumido el {Math.round(a.percentage)}% ({toFiniteNumber(a.spent).toFixed(2)} de {toFiniteNumber(a.amount).toFixed(2)})</span>
+                <span className={`budget-alert-item__status ${a.percentage >= 100 ? 'budget-alert-item__status--exceeded' : 'budget-alert-item__status--warning'}`}>
                   {a.percentage >= 100 ? 'Excedido' : `${Math.round(a.percentage)}%`}
                 </span>
               </li>
@@ -116,43 +105,34 @@ export default function BudgetsPage() {
           {budgets.map((budget: Budget) => {
             const pct = budget.percentage_consumed ?? 0;
             const level = pct >= 100 ? 'danger' : pct >= 80 ? 'warning' : 'safe';
-            const colors = level === 'danger'
-              ? { bg: 'var(--color-danger-dim)', fg: 'var(--color-danger)', label: 'Excedido' }
-              : level === 'warning'
-              ? { bg: 'var(--color-warning-dim)', fg: 'var(--color-warning)', label: 'Alerta' }
-              : { bg: 'var(--color-success-dim)', fg: 'var(--color-success)', label: 'OK' };
+            const statusLabels = { danger: 'Excedido', warning: 'Alerta', safe: 'OK' };
             return (
               <Card key={budget.id} hover={false}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--space-3)' }}>
-                  <div>
-                    <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 600 }}>
-                      {budget.category_name || 'General'}
-                    </h3>
-                    <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 'var(--space-1)' }}>
-                      {MONTHS[budget.month - 1]} {budget.year}
-                    </p>
+                <div className="budget-card__header">
+                  <div className="budget-card__info">
+                    <h3>{budget.category_name || 'General'}</h3>
+                    <p className="budget-card__period">{MONTHS[budget.month - 1]} {budget.year}</p>
                   </div>
-                  <span style={{
-                    padding: '2px var(--space-2)', borderRadius: 'var(--radius-full)',
-                    fontSize: 'var(--text-xs)', fontWeight: 600,
-                    background: colors.bg, color: colors.fg,
-                  }}>
-                    {colors.label}
+                  <span className={`budget-card__status budget-card__status--${level}`}>
+                    {statusLabels[level]}
                   </span>
                 </div>
 
-                <ProgressBar progress={pct} color={level === 'danger' ? 'var(--color-danger)' : level === 'warning' ? 'var(--color-warning)' : 'var(--color-brand-500)'} />
+                <ProgressBar
+                  progress={pct}
+                  color={level === 'danger' ? 'var(--color-danger)' : level === 'warning' ? 'var(--color-warning)' : 'var(--color-brand-500)'}
+                />
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'var(--space-2)' }}>
-                  <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
+                <div className="budget-card__amounts">
+                  <span className="budget-card__amounts-left">
                     Gastado: <MoneyDisplay amount={budget.spent} />
                   </span>
-                  <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>
+                  <span className="budget-card__amounts-right">
                     <MoneyDisplay amount={budget.amount} />
                   </span>
                 </div>
 
-                <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-4)' }}>
+                <div className="budget-card__actions">
                   <button className="btn btn--ghost btn--sm" onClick={() => navigate(`/budgets/${budget.id}/edit`)}>
                     <Edit3 size={14} /> Editar
                   </button>

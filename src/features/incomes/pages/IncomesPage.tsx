@@ -1,5 +1,5 @@
 import { useNavigate, Link } from 'react-router-dom';
-import { Plus, Search, ChevronDown } from 'lucide-react';
+import { Plus, Search, ChevronDown, TrendingUp } from 'lucide-react';
 import { incomesApi } from '@/services/api';
 import { Card } from '@/shared/components/Card';
 import { MoneyDisplay } from '@/shared/components/MoneyDisplay';
@@ -23,8 +23,10 @@ export default function IncomesPage() {
   });
 
   if (isLoading) return (
-    <div>
-      <div className="dashboard-header"><h1>Ingresos</h1></div>
+    <div className="list-screen">
+      <div className="page-header">
+        <h1 className="page-header__title">Ingresos</h1>
+      </div>
       <SkeletonCard count={5} />
     </div>
   );
@@ -32,58 +34,50 @@ export default function IncomesPage() {
   if (isError) return <ErrorState onRetry={refetch} />;
 
   return (
-    <div>
-      <div className="dashboard-header">
-        <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--color-text-primary)' }}>
-          Ingresos {total > 0 && <span style={{ fontSize: 'var(--text-sm)', fontWeight: 400, color: 'var(--color-text-muted)' }}>({total})</span>}
+    <div className="list-screen">
+      <div className="page-header">
+        <h1 className="page-header__title">
+          Ingresos{total > 0 && <span className="page-header__count">({total})</span>}
         </h1>
-        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-          <div className="topbar__search" style={{ position: 'relative', width: 200 }}>
-            <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)' }} />
+        <div className="page-header__actions">
+          <label className="list-search" style={{ maxWidth: 260 }}>
+            <Search size={14} aria-hidden="true" />
             <input
               type="text"
-              placeholder="Buscar..."
+              placeholder="Buscar ingresos..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              style={{ background: 'none', border: 'none', outline: 'none', color: 'inherit', width: '100%', paddingLeft: 24, fontSize: 'inherit' }}
+              aria-label="Buscar ingresos"
             />
-          </div>
+          </label>
           <button className="btn btn--primary btn--sm" onClick={() => navigate('/incomes/new')}>
-            <Plus size={14} /> Nuevo Ingreso
+            <Plus size={14} /> Nuevo ingreso
           </button>
         </div>
       </div>
 
       {filtered.length === 0 ? (
         <EmptyState
+          icon={TrendingUp}
           title={search ? 'Sin resultados' : 'No hay ingresos'}
           message={search ? 'Prueba con otros términos' : 'Registra tu primer ingreso'}
-          action={search ? undefined : { label: 'Nuevo Ingreso', onClick: () => navigate('/incomes/new') }}
+          action={search ? { label: 'Limpiar búsqueda', onClick: () => setSearch('') } : { label: 'Nuevo ingreso', onClick: () => navigate('/incomes/new') }}
         />
       ) : (
-        <Card hover={false}>
+        <Card hover={false} className="list-card">
           {filtered.map((income) => (
-            <Link
-              key={income.id}
-              to={`/incomes/${income.id}`}
-              className="activity-item"
-              style={{ textDecoration: 'none' }}
-            >
-              <div className="activity-item__dot" style={{ background: 'var(--color-success)' }} />
-              <div className="activity-item__info">
-                <div className="activity-item__title">{income.description}</div>
-                <div className="activity-item__date">{formatDate(income.income_date)}</div>
+            <Link key={income.id} to={`/incomes/${income.id}`} className="list-item">
+              <div className="list-item__dot" style={{ background: 'var(--color-success)', boxShadow: '0 0 0 4px var(--color-success-dim)' }} />
+              <div className="list-item__info">
+                <div className="list-item__title">{income.description}</div>
+                <div className="list-item__date">{formatDate(income.income_date)}</div>
               </div>
               <MoneyDisplay amount={income.amount} size="sm" color="positive" />
             </Link>
           ))}
           {hasNextPage && (
-            <div style={{ textAlign: 'center', padding: 'var(--space-4)' }}>
-              <button
-                className="btn btn--ghost btn--sm"
-                onClick={() => fetchNextPage()}
-                disabled={isFetchingNextPage}
-              >
+            <div className="list-load-more">
+              <button className="btn btn--ghost btn--sm" onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
                 {isFetchingNextPage ? <span className="btn__loader" /> : <><ChevronDown size={16} /> Cargar más</>}
               </button>
             </div>

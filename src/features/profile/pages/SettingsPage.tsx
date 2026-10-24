@@ -102,7 +102,7 @@ export default function SettingsPage() {
 
   if (loading) return (
     <div>
-      <div className="dashboard-header"><h1>Configuración</h1></div>
+      <div className="page-header"><h1 className="page-header__title">Configuración</h1></div>
       <Card hover={false}><div className="skeleton" style={{ height: 200 }} /></Card>
     </div>
   );
@@ -115,13 +115,15 @@ export default function SettingsPage() {
 
   return (
     <div>
-      <div className="dashboard-header">
+      <div className="page-header">
         <button className="btn btn--ghost btn--sm" onClick={() => navigate(-1)}>
           <ArrowLeft size={16} /> Volver
         </button>
-        <button className="btn btn--primary btn--sm" onClick={handleSave} disabled={saving}>
-          <Save size={14} /> {saving ? 'Guardando...' : 'Guardar cambios'}
-        </button>
+        <div className="page-header__actions">
+          <button className="btn btn--primary btn--sm" onClick={handleSave} disabled={saving}>
+            <Save size={14} /> {saving ? 'Guardando...' : 'Guardar cambios'}
+          </button>
+        </div>
       </div>
 
       {error && <ErrorState message="Error al guardar configuración" />}

@@ -82,7 +82,7 @@ export default function CouplePage() {
 
   if (isLoading) return (
     <div>
-      <div className="dashboard-header"><h1>Mi Pareja</h1></div>
+      <div className="page-header"><h1 className="page-header__title">Mi Pareja</h1></div>
       <SkeletonCard count={3} />
     </div>
   );
@@ -91,8 +91,8 @@ export default function CouplePage() {
 
   return (
     <div>
-      <div className="dashboard-header">
-        <h1>Mi Pareja</h1>
+      <div className="page-header">
+        <h1 className="page-header__title">Mi Pareja</h1>
       </div>
 
       {relationshipStatus === 'none' && (

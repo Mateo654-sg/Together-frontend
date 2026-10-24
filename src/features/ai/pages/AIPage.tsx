@@ -511,10 +511,9 @@ export default function AIPage() {
   };
 
   return (
-    <div>
+    <div className="ai-screen">
       <div style={{
         display: 'flex', alignItems: 'center', gap: 'var(--space-4)',
-        marginBottom: 'var(--space-6)',
         padding: 'var(--space-5)',
         borderRadius: 'var(--radius-2xl)',
         background: 'var(--gradient-brand)',
@@ -535,20 +534,13 @@ export default function AIPage() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-5)', overflowX: 'auto', paddingBottom: 'var(--space-1)' }}>
+      <div style={{ display: 'flex', gap: 'var(--space-2)', overflowX: 'auto', paddingBottom: 'var(--space-1)' }}>
         {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap',
-              padding: '7px 14px', borderRadius: 'var(--radius-full)',
-              fontSize: 'var(--text-sm)', fontWeight: 600, border: 'none', cursor: 'pointer',
-              background: tab === t.key ? 'var(--gradient-brand)' : 'var(--color-bg-elevated)',
-              color: tab === t.key ? 'white' : 'var(--color-text-secondary)',
-              boxShadow: tab === t.key ? 'var(--shadow-brand-sm)' : 'none',
-              transition: 'all var(--transition-fast)',
-            }}
+            className={`btn btn--sm ${tab === t.key ? 'btn--primary' : 'btn--secondary'}`}
+            style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
           >
             <t.icon size={13} /> {t.label}
           </button>

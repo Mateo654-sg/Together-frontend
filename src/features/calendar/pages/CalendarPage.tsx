@@ -60,23 +60,21 @@ export default function CalendarPage() {
   const selectedEvents = selectedDate ? getEventsForDay(parseInt(selectedDate.split('-')[2])) : null;
 
   return (
-    <div>
-      <div className="dashboard-header">
-        <h1>Calendario</h1>
+    <div className="calendar-screen">
+      <div className="page-header">
+        <h1 className="page-header__title">Calendario</h1>
       </div>
 
       <Card hover={false}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)' }}>
+        <div className="calendar-nav">
           <button className="btn btn--ghost btn--sm" onClick={prevMonth}><ChevronLeft size={18} /></button>
-          <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 700 }}>{MONTHS[month]} {year}</h2>
+          <h2>{MONTHS[month]} {year}</h2>
           <button className="btn btn--ghost btn--sm" onClick={nextMonth}><ChevronRight size={18} /></button>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 'var(--space-1)', textAlign: 'center' }}>
+        <div className="calendar-grid">
           {DAYS.map(d => (
-            <div key={d} style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--color-text-muted)', padding: 'var(--space-2) 0' }}>
-              {d}
-            </div>
+            <div key={d} className="calendar-day-header">{d}</div>
           ))}
 
           {Array.from({ length: firstDay }).map((_, i) => (
@@ -94,23 +92,15 @@ export default function CalendarPage() {
               <button
                 key={day}
                 onClick={() => setSelectedDate(isSelected ? null : key)}
-                style={{
-                  background: isSelected ? 'var(--gradient-brand)' : isToday ? 'var(--color-bg-elevated)' : 'transparent',
-                  color: isSelected ? 'white' : 'var(--color-text-primary)',
-                  border: isToday && !isSelected ? '1px solid var(--color-border-default)' : 'none',
-                  borderRadius: 'var(--radius-lg)',
-                  padding: 'var(--space-2) 0',
-                  cursor: 'pointer',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px',
-                  fontSize: 'var(--text-sm)',
-                }}
+                className={`calendar-day${isToday ? ' calendar-day--today' : ''}${isSelected ? ' calendar-day--selected' : ''}`}
+                style={isSelected ? { background: 'var(--gradient-brand)', color: 'white' } : undefined}
               >
-                <span style={{ fontWeight: isToday || isSelected ? 700 : 400 }}>{day}</span>
+                <span className="calendar-day__num">{day}</span>
                 {!events.isEmpty && (
-                  <div style={{ display: 'flex', gap: '2px' }}>
-                    {events.expenses.length > 0 && <TrendingDown size={10} style={{ color: 'var(--color-danger)' }} />}
-                    {events.reminders.length > 0 && <Bell size={10} style={{ color: 'var(--color-warning)' }} />}
-                    {events.goals.length > 0 && <Target size={10} style={{ color: 'var(--color-success)' }} />}
+                  <div style={{ display: 'flex', gap: '2px', marginTop: 2 }}>
+                    {events.expenses.length > 0 && <TrendingDown size={10} style={{ color: isSelected ? 'rgba(255,255,255,0.8)' : 'var(--color-danger)' }} />}
+                    {events.reminders.length > 0 && <Bell size={10} style={{ color: isSelected ? 'rgba(255,255,255,0.8)' : 'var(--color-warning)' }} />}
+                    {events.goals.length > 0 && <Target size={10} style={{ color: isSelected ? 'rgba(255,255,255,0.8)' : 'var(--color-success)' }} />}
                   </div>
                 )}
               </button>
@@ -120,49 +110,42 @@ export default function CalendarPage() {
       </Card>
 
       {selectedDate && selectedEvents && (
-        <div style={{ marginTop: 'var(--space-4)' }}>
-          <h3 style={{ marginBottom: 'var(--space-3)' }}>
-            {new Date(selectedDate).toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+        <Card hover={false}>
+          <h3 style={{ fontWeight: 700, marginBottom: 'var(--space-3)', fontSize: 'var(--text-base)', textTransform: 'capitalize' }}>
+            {new Date(selectedDate + 'T12:00:00').toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </h3>
 
           {selectedEvents.expenses.map((e: Expense) => (
-            <div key={e.id} className="card" style={{ marginBottom: 'var(--space-2)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                  <TrendingDown size={16} style={{ color: 'var(--color-danger)' }} />
-                  <span style={{ fontSize: 'var(--text-sm)' }}>{e.description}</span>
-                </div>
-                <span style={{ fontWeight: 600, color: 'var(--color-danger)', fontSize: 'var(--text-sm)' }}>
-                  <MoneyDisplay amount={e.amount} />
-                </span>
+            <div key={e.id} className="list-item">
+              <div className="list-item__dot" style={{ background: 'var(--color-danger)', boxShadow: '0 0 0 4px var(--color-danger-dim)' }} />
+              <div className="list-item__info">
+                <div className="list-item__title">{e.description}</div>
               </div>
+              <MoneyDisplay amount={e.amount} size="sm" color="negative" />
             </div>
           ))}
           {selectedEvents.reminders.map((r: Reminder) => (
-            <div key={r.id} className="card" style={{ marginBottom: 'var(--space-2)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                <Bell size={16} style={{ color: 'var(--color-warning)' }} />
-                <span style={{ fontSize: 'var(--text-sm)' }}>{r.title}</span>
+            <div key={r.id} className="list-item">
+              <div className="list-item__dot" style={{ background: 'var(--color-warning)', boxShadow: '0 0 0 4px var(--color-warning-dim)' }} />
+              <div className="list-item__info">
+                <div className="list-item__title">{r.title}</div>
               </div>
+              <Bell size={14} style={{ color: 'var(--color-warning)', flexShrink: 0 }} />
             </div>
           ))}
           {selectedEvents.goals.map((g: Goal) => (
-            <div key={g.id} className="card" style={{ marginBottom: 'var(--space-2)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                  <Target size={16} style={{ color: 'var(--color-success)' }} />
-                  <span style={{ fontSize: 'var(--text-sm)' }}>Meta: {g.title}</span>
-                </div>
-                <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>
-                  <MoneyDisplay amount={g.target_amount} />
-                </span>
+            <div key={g.id} className="list-item">
+              <div className="list-item__dot" style={{ background: 'var(--color-success)', boxShadow: '0 0 0 4px var(--color-success-dim)' }} />
+              <div className="list-item__info">
+                <div className="list-item__title">Meta: {g.title}</div>
               </div>
+              <MoneyDisplay amount={g.target_amount} size="sm" color="positive" />
             </div>
           ))}
           {selectedEvents.isEmpty && (
-            <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>Sin eventos este día</p>
+            <p className="list-item__date" style={{ padding: 'var(--space-2) 0' }}>Sin eventos este día</p>
           )}
-        </div>
+        </Card>
       )}
     </div>
   );

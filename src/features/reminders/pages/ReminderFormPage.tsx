@@ -64,11 +64,11 @@ export default function ReminderFormPage() {
 
   return (
     <div>
-      <div className="dashboard-header">
-        <button className="btn btn--ghost" onClick={() => navigate('/reminders')}>
+      <div className="page-header">
+        <button className="btn btn--ghost btn--sm" onClick={() => navigate('/reminders')}>
           <ArrowLeft size={16} /> Volver
         </button>
-        <h1>{isEdit ? 'Editar recordatorio' : 'Nuevo recordatorio'}</h1>
+        <h1 className="page-header__title">{isEdit ? 'Editar recordatorio' : 'Nuevo recordatorio'}</h1>
       </div>
 
       <div className="card" style={{ maxWidth: 480 }}>

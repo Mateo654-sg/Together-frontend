@@ -67,11 +67,11 @@ export default function BudgetFormPage() {
 
   return (
     <div>
-      <div className="dashboard-header">
-        <button className="btn btn--ghost" onClick={() => navigate('/budgets')}>
+      <div className="page-header">
+        <button className="btn btn--ghost btn--sm" onClick={() => navigate('/budgets')}>
           <ArrowLeft size={16} /> Volver
         </button>
-        <h1>{isEdit ? 'Editar presupuesto' : 'Nuevo presupuesto'}</h1>
+        <h1 className="page-header__title">{isEdit ? 'Editar presupuesto' : 'Nuevo presupuesto'}</h1>
       </div>
 
       <div className="card" style={{ maxWidth: 480 }}>

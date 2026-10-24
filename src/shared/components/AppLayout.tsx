@@ -25,7 +25,15 @@ import { useAuthStore } from '@/features/auth/store/auth-store';
 import { OfflineBanner } from '@/pwa/OfflineBanner';
 import { InstallButton } from '@/pwa/InstallButton';
 import { InstallPromptBanner } from '@/pwa/InstallPromptBanner';
-import { navItems, bottomNavItems } from '@/shared/navigation';
+import { navItems, bottomNavItems, type NavItem } from '@/shared/navigation';
+
+const NAV_GROUPS: { label: string; paths: string[] }[] = [
+  { label: 'Principal', paths: ['/dashboard', '/activity'] },
+  { label: 'Finanzas', paths: ['/recurring', '/goals', '/budgets', '/debts'] },
+  { label: 'Juntos', paths: ['/couple', '/shared-finance', '/chat'] },
+  { label: 'Herramientas', paths: ['/calendar', '/reminders', '/categories', '/reports', '/ai'] },
+  { label: 'Cuenta', paths: ['/profile'] },
+];
 
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -60,19 +68,30 @@ export function AppLayout() {
         </div>
 
         <nav className="sidebar__nav">
-          {navItems.map((item) => {
-            const isActive = location.pathname.startsWith(item.path);
-            const Icon = item.icon;
+          {NAV_GROUPS.map((group) => {
+            const groupItems = group.paths
+              .map((p) => navItems.find((item: NavItem) => item.path === p))
+              .filter(Boolean) as NavItem[];
+            if (groupItems.length === 0) return null;
             return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`sidebar__link ${isActive ? 'sidebar__link--active' : ''}`}
-                onClick={() => setSidebarOpen(false)}
-              >
-                <Icon size={20} />
-                <span>{item.label}</span>
-              </Link>
+              <div key={group.label} className="sidebar__nav-group">
+                <span className="sidebar__nav-label">{group.label}</span>
+                {groupItems.map((item) => {
+                  const isActive = location.pathname.startsWith(item.path);
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      className={`sidebar__link ${isActive ? 'sidebar__link--active' : ''}`}
+                      onClick={() => setSidebarOpen(false)}
+                    >
+                      <Icon size={20} />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
             );
           })}
         </nav>

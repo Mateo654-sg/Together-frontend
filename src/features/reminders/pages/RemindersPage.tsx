@@ -68,12 +68,14 @@ export default function RemindersPage() {
   };
 
   return (
-    <div>
-      <div className="dashboard-header">
-        <h1>Recordatorios</h1>
-        <button className="btn btn--primary" onClick={() => navigate('/reminders/new')}>
-          <Plus size={16} /> Nuevo recordatorio
-        </button>
+    <div className="list-screen">
+      <div className="page-header">
+        <h1 className="page-header__title">Recordatorios</h1>
+        <div className="page-header__actions">
+          <button className="btn btn--primary" onClick={() => navigate('/reminders/new')}>
+            <Plus size={16} /> Nuevo recordatorio
+          </button>
+        </div>
       </div>
 
       <FilterToolbar
@@ -113,60 +115,38 @@ export default function RemindersPage() {
           />
         )
       ) : (
-        <div className="goals-grid">
+        <Card hover={false} className="list-card">
           {filteredReminders.map((reminder: Reminder) => {
             const overdue = !reminder.is_completed && isOverdue(reminder.due_date);
             return (
-              <Card key={reminder.id} hover={false}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)' }}>
+              <div key={reminder.id} className="list-item" style={{ alignItems: 'flex-start', flexDirection: 'column', minHeight: 'auto', padding: 'var(--space-4)' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)', width: '100%' }}>
                   <button
                     onClick={() => completeMutation.mutate(reminder.id)}
                     disabled={reminder.is_completed || completeMutation.isPending}
-                    style={{
-                      background: 'none', border: 'none', cursor: 'pointer',
-                      padding: 0, marginTop: 2,
-                      color: reminder.is_completed ? 'var(--color-success)' : 'var(--color-text-muted)',
-                    }}
+                    className="btn btn--ghost"
+                    style={{ padding: 0, minHeight: 0, color: reminder.is_completed ? 'var(--color-success)' : 'var(--color-text-muted)' }}
                     title={reminder.is_completed ? 'Completado' : 'Marcar como completado'}
                   >
                     {reminder.is_completed ? <CheckCircle size={20} /> : <Circle size={20} />}
                   </button>
 
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <div>
-                        <h3 style={{
-                          fontSize: 'var(--text-base)', fontWeight: 600,
-                          textDecoration: reminder.is_completed ? 'line-through' : 'none',
-                          color: reminder.is_completed ? 'var(--color-text-muted)' : 'var(--color-text)',
-                        }}>
-                          {reminder.title}
-                        </h3>
-                        {reminder.description && (
-                          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginTop: 'var(--space-1)' }}>
-                            {reminder.description}
-                          </p>
-                        )}
-                      </div>
-                    </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <h3 className="list-item__title" style={{ textDecoration: reminder.is_completed ? 'line-through' : 'none', opacity: reminder.is_completed ? 0.6 : 1 }}>
+                      {reminder.title}
+                    </h3>
+                    {reminder.description && (
+                      <p className="list-item__date" style={{ marginTop: 'var(--space-1)' }}>{reminder.description}</p>
+                    )}
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginTop: 'var(--space-2)', flexWrap: 'wrap' }}>
-                      <div style={{
-                        display: 'flex', alignItems: 'center', gap: 'var(--space-1)',
-                        fontSize: 'var(--text-xs)',
-                        color: overdue ? 'var(--color-danger)' : 'var(--color-text-muted)',
-                      }}>
+                      <div className="list-item__date" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)', color: overdue ? 'var(--color-danger)' : undefined }}>
                         <Clock size={12} />
-                        <span>{formatDate(reminder.due_date)}{overdue ? ' (Atrasado)' : ''}</span>
+                        <span>{formatDate(reminder.due_date)}{overdue ? ' · Atrasado' : ''}</span>
                       </div>
 
                       {reminder.repeat_type && reminder.repeat_type !== 'none' && (
-                        <span style={{
-                          padding: '1px var(--space-2)', borderRadius: 'var(--radius-full)',
-                          fontSize: 'var(--text-xs)', fontWeight: 600,
-                          background: 'var(--color-bg-elevated)', color: 'var(--color-text-muted)',
-                          textTransform: 'capitalize',
-                        }}>
+                        <span className="budget-card__status budget-card__status--safe" style={{ textTransform: 'capitalize' }}>
                           {reminder.repeat_type}
                         </span>
                       )}
@@ -193,10 +173,10 @@ export default function RemindersPage() {
                     )}
                   </div>
                 </div>
-              </Card>
+              </div>
             );
           })}
-        </div>
+        </Card>
       )}
     </div>
   );

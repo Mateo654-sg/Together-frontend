@@ -54,7 +54,7 @@ export default function GoalFormPage() {
 
   if (editMode && isLoading) return (
     <div>
-      <div className="dashboard-header"><h1>Editar Meta</h1></div>
+      <div className="page-header"><h1 className="page-header__title">Editar Meta</h1></div>
       <SkeletonCard count={2} />
     </div>
   );
@@ -62,17 +62,19 @@ export default function GoalFormPage() {
 
   return (
     <div>
-      <div className="dashboard-header">
+      <div className="page-header">
         <button className="btn btn--ghost btn--sm" onClick={() => navigate(-1)}>
           <ArrowLeft size={16} /> Volver
         </button>
-        <button
-          className="btn btn--primary btn--sm"
-          onClick={() => mutation.mutate()}
-          disabled={!title || !targetAmount || mutation.isPending}
-        >
-          <Save size={14} /> {mutation.isPending ? 'Guardando...' : editMode ? 'Actualizar' : 'Crear'}
-        </button>
+        <div className="page-header__actions">
+          <button
+            className="btn btn--primary btn--sm"
+            onClick={() => mutation.mutate()}
+            disabled={!title || !targetAmount || mutation.isPending}
+          >
+            <Save size={14} /> {mutation.isPending ? 'Guardando...' : editMode ? 'Actualizar' : 'Crear'}
+          </button>
+        </div>
       </div>
 
       {mutation.isError && <ErrorState message="Error al guardar la meta" />}
